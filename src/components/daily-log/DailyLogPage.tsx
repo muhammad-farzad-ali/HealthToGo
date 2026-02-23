@@ -62,20 +62,28 @@ export function DailyLogPage() {
   const targets = settings?.dailyTargets || DEFAULT_TARGETS;
 
   const calculateNutrition = () => {
-    if (!dailyLog || !foodInventory) return { calories: 0, protein: 0, carbs: 0, fat: 0 };
+    if (!dailyLog || !foodInventory) return { 
+      calories: 0, kilojoules: 0, protein: 0, carbs: 0, fiber: 0, sugars: 0, addedSugars: 0, fat: 0, saturatedFat: 0 
+    };
     
     return dailyLog.foodItems.reduce(
       (acc, logged) => {
         const food = foodInventory.find((f) => f.id === logged.inventoryId);
         if (food) {
-          acc.calories += food.calories * logged.quantity;
-          acc.protein += food.protein * logged.quantity;
-          acc.carbs += food.carbs * logged.quantity;
-          acc.fat += food.fat * logged.quantity;
+          const qty = logged.quantity;
+          acc.calories += (food.calories || 0) * qty;
+          acc.kilojoules += (food.kilojoules || 0) * qty;
+          acc.protein += (food.protein || 0) * qty;
+          acc.carbs += (food.carbs || 0) * qty;
+          acc.fiber += (food.fiber || 0) * qty;
+          acc.sugars += (food.sugars || 0) * qty;
+          acc.addedSugars += (food.addedSugars || 0) * qty;
+          acc.fat += (food.fat || 0) * qty;
+          acc.saturatedFat += (food.saturatedFat || 0) * qty;
         }
         return acc;
       },
-      { calories: 0, protein: 0, carbs: 0, fat: 0 }
+      { calories: 0, kilojoules: 0, protein: 0, carbs: 0, fiber: 0, sugars: 0, addedSugars: 0, fat: 0, saturatedFat: 0 }
     );
   };
 
@@ -271,12 +279,16 @@ export function DailyLogPage() {
             <div className="space-y-4">
               <div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span>Calories</span>
-                  <span>{Math.round(nutrition.calories)} / {targets.calories}</span>
+                  <span>Energy</span>
+                  <span>{Math.round(nutrition.calories)} / {targets.calories} kcal</span>
                 </div>
                 <Progress value={(nutrition.calories / targets.calories) * 100} />
+                <div className="text-xs text-muted-foreground mt-1 text-right">
+                  {Math.round(nutrition.kilojoules)} / {targets.kilojoules} kJ
+                </div>
               </div>
-              <div className="grid grid-cols-3 gap-2 text-center text-sm">
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-center text-sm">
                 <div>
                   <div className="text-muted-foreground">Protein</div>
                   <div className="font-medium">{Math.round(nutrition.protein)}g</div>
@@ -289,7 +301,23 @@ export function DailyLogPage() {
                   <div className="text-muted-foreground">Fat</div>
                   <div className="font-medium">{Math.round(nutrition.fat)}g</div>
                 </div>
+                <div>
+                  <div className="text-muted-foreground">Sat Fat</div>
+                  <div className="font-medium">{Math.round(nutrition.saturatedFat)}g</div>
+                </div>
               </div>
+
+              <div className="grid grid-cols-2 gap-2 text-center text-sm">
+                <div>
+                  <div className="text-muted-foreground">Fiber</div>
+                  <div className="font-medium">{Math.round(nutrition.fiber)}g</div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Sugars</div>
+                  <div className="font-medium">{Math.round(nutrition.sugars)}g</div>
+                </div>
+              </div>
+
               {dailyLog?.foodItems.length ? (
                 <ScrollArea className="h-[150px]">
                   <Table>

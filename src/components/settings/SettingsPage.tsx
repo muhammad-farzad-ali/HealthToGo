@@ -101,70 +101,124 @@ export function SettingsPage() {
                 Edit
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Edit Daily Targets</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Calories</Label>
-                    <Input
-                      type="number"
-                      value={editingTargets.calories}
-                      onChange={(e) => setEditingTargets({ ...editingTargets, calories: Number(e.target.value) })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Protein (g)</Label>
-                    <Input
-                      type="number"
-                      value={editingTargets.protein}
-                      onChange={(e) => setEditingTargets({ ...editingTargets, protein: Number(e.target.value) })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Carbs (g)</Label>
-                    <Input
-                      type="number"
-                      value={editingTargets.carbs}
-                      onChange={(e) => setEditingTargets({ ...editingTargets, carbs: Number(e.target.value) })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Fat (g)</Label>
-                    <Input
-                      type="number"
-                      value={editingTargets.fat}
-                      onChange={(e) => setEditingTargets({ ...editingTargets, fat: Number(e.target.value) })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Steps</Label>
-                    <Input
-                      type="number"
-                      value={editingTargets.steps}
-                      onChange={(e) => setEditingTargets({ ...editingTargets, steps: Number(e.target.value) })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Water (ml)</Label>
-                    <Input
-                      type="number"
-                      value={editingTargets.waterMl}
-                      onChange={(e) => setEditingTargets({ ...editingTargets, waterMl: Number(e.target.value) })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Sleep (hours)</Label>
-                    <Input
-                      type="number"
-                      step="0.5"
-                      value={editingTargets.sleepHours}
-                      onChange={(e) => setEditingTargets({ ...editingTargets, sleepHours: Number(e.target.value) })}
-                    />
+                <div>
+                  <Label className="text-base font-semibold">Energy</Label>
+                  <div className="grid grid-cols-2 gap-4 mt-2">
+                    <div className="space-y-2">
+                      <Label>Calories (kcal)</Label>
+                      <Input
+                        type="number"
+                        value={editingTargets.calories}
+                        onChange={(e) => setEditingTargets({ ...editingTargets, calories: Number(e.target.value) })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Kilojoules (kJ)</Label>
+                      <Input
+                        type="number"
+                        value={editingTargets.kilojoules}
+                        onChange={(e) => setEditingTargets({ ...editingTargets, kilojoules: Number(e.target.value) })}
+                      />
+                    </div>
                   </div>
                 </div>
+
+                <div>
+                  <Label className="text-base font-semibold">Macronutrients</Label>
+                  <div className="grid grid-cols-2 gap-4 mt-2">
+                    <div className="space-y-2">
+                      <Label>Protein (g)</Label>
+                      <Input
+                        type="number"
+                        value={editingTargets.protein}
+                        onChange={(e) => setEditingTargets({ ...editingTargets, protein: Number(e.target.value) })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Carbohydrates (g)</Label>
+                      <Input
+                        type="number"
+                        value={editingTargets.carbs}
+                        onChange={(e) => setEditingTargets({ ...editingTargets, carbs: Number(e.target.value) })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Total Fat (g)</Label>
+                      <Input
+                        type="number"
+                        value={editingTargets.fat}
+                        onChange={(e) => setEditingTargets({ ...editingTargets, fat: Number(e.target.value) })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Saturated Fat (g)</Label>
+                      <Input
+                        type="number"
+                        value={editingTargets.saturatedFat}
+                        onChange={(e) => setEditingTargets({ ...editingTargets, saturatedFat: Number(e.target.value) })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-base font-semibold">Carbohydrates Detail</Label>
+                  <div className="grid grid-cols-2 gap-4 mt-2">
+                    <div className="space-y-2">
+                      <Label>Fiber (g)</Label>
+                      <Input
+                        type="number"
+                        value={editingTargets.fiber}
+                        onChange={(e) => setEditingTargets({ ...editingTargets, fiber: Number(e.target.value) })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Sugars (g)</Label>
+                      <Input
+                        type="number"
+                        value={editingTargets.sugars}
+                        onChange={(e) => setEditingTargets({ ...editingTargets, sugars: Number(e.target.value) })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-base font-semibold">Other</Label>
+                  <div className="grid grid-cols-3 gap-4 mt-2">
+                    <div className="space-y-2">
+                      <Label>Steps</Label>
+                      <Input
+                        type="number"
+                        value={editingTargets.steps}
+                        onChange={(e) => setEditingTargets({ ...editingTargets, steps: Number(e.target.value) })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Water (ml)</Label>
+                      <Input
+                        type="number"
+                        value={editingTargets.waterMl}
+                        onChange={(e) => setEditingTargets({ ...editingTargets, waterMl: Number(e.target.value) })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Sleep (hours)</Label>
+                      <Input
+                        type="number"
+                        step="0.5"
+                        value={editingTargets.sleepHours}
+                        onChange={(e) => setEditingTargets({ ...editingTargets, sleepHours: Number(e.target.value) })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex gap-2">
                   <Button onClick={handleSaveTargets} className="flex-1">
                     <Save className="h-4 w-4 mr-1" />
@@ -179,34 +233,70 @@ export function SettingsPage() {
           </Dialog>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="text-sm text-muted-foreground">Calories</div>
-              <div className="text-xl font-bold">{targets.calories}</div>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-semibold">Energy</Label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-1">
+                <div className="p-2 bg-muted rounded-lg">
+                  <div className="text-xs text-muted-foreground">Calories</div>
+                  <div className="text-lg font-bold">{targets.calories}</div>
+                </div>
+                <div className="p-2 bg-muted rounded-lg">
+                  <div className="text-xs text-muted-foreground">Kilojoules</div>
+                  <div className="text-lg font-bold">{targets.kilojoules}</div>
+                </div>
+              </div>
             </div>
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="text-sm text-muted-foreground">Protein</div>
-              <div className="text-xl font-bold">{targets.protein}g</div>
+            <div>
+              <Label className="text-sm font-semibold">Macronutrients</Label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-1">
+                <div className="p-2 bg-muted rounded-lg">
+                  <div className="text-xs text-muted-foreground">Protein</div>
+                  <div className="text-lg font-bold">{targets.protein}g</div>
+                </div>
+                <div className="p-2 bg-muted rounded-lg">
+                  <div className="text-xs text-muted-foreground">Carbs</div>
+                  <div className="text-lg font-bold">{targets.carbs}g</div>
+                </div>
+                <div className="p-2 bg-muted rounded-lg">
+                  <div className="text-xs text-muted-foreground">Fat</div>
+                  <div className="text-lg font-bold">{targets.fat}g</div>
+                </div>
+                <div className="p-2 bg-muted rounded-lg">
+                  <div className="text-xs text-muted-foreground">Sat Fat</div>
+                  <div className="text-lg font-bold">{targets.saturatedFat}g</div>
+                </div>
+              </div>
             </div>
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="text-sm text-muted-foreground">Carbs</div>
-              <div className="text-xl font-bold">{targets.carbs}g</div>
+            <div>
+              <Label className="text-sm font-semibold">Carbs Detail</Label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-1">
+                <div className="p-2 bg-muted rounded-lg">
+                  <div className="text-xs text-muted-foreground">Fiber</div>
+                  <div className="text-lg font-bold">{targets.fiber}g</div>
+                </div>
+                <div className="p-2 bg-muted rounded-lg">
+                  <div className="text-xs text-muted-foreground">Sugars</div>
+                  <div className="text-lg font-bold">{targets.sugars}g</div>
+                </div>
+              </div>
             </div>
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="text-sm text-muted-foreground">Fat</div>
-              <div className="text-xl font-bold">{targets.fat}g</div>
-            </div>
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="text-sm text-muted-foreground">Steps</div>
-              <div className="text-xl font-bold">{targets.steps}</div>
-            </div>
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="text-sm text-muted-foreground">Water</div>
-              <div className="text-xl font-bold">{targets.waterMl}ml</div>
-            </div>
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="text-sm text-muted-foreground">Sleep</div>
-              <div className="text-xl font-bold">{targets.sleepHours}h</div>
+            <div>
+              <Label className="text-sm font-semibold">Other</Label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-1">
+                <div className="p-2 bg-muted rounded-lg">
+                  <div className="text-xs text-muted-foreground">Steps</div>
+                  <div className="text-lg font-bold">{targets.steps}</div>
+                </div>
+                <div className="p-2 bg-muted rounded-lg">
+                  <div className="text-xs text-muted-foreground">Water</div>
+                  <div className="text-lg font-bold">{targets.waterMl}ml</div>
+                </div>
+                <div className="p-2 bg-muted rounded-lg">
+                  <div className="text-xs text-muted-foreground">Sleep</div>
+                  <div className="text-lg font-bold">{targets.sleepHours}h</div>
+                </div>
+              </div>
             </div>
           </div>
         </CardContent>

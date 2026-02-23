@@ -101,19 +101,26 @@ export function Dashboard() {
   }, []);
 
   const calculateNutrition = (log: any) => {
-    if (!log || !foodInventory) return { calories: 0, protein: 0, carbs: 0, fat: 0 };
+    if (!log || !foodInventory) return { 
+      calories: 0, kilojoules: 0, protein: 0, carbs: 0, fiber: 0, sugars: 0, fat: 0, saturatedFat: 0 
+    };
     return log.foodItems.reduce(
       (acc: any, item: any) => {
         const food = foodInventory.find((f) => f.id === item.inventoryId);
         if (food) {
-          acc.calories += food.calories * item.quantity;
-          acc.protein += food.protein * item.quantity;
-          acc.carbs += food.carbs * item.quantity;
-          acc.fat += food.fat * item.quantity;
+          const qty = item.quantity;
+          acc.calories += (food.calories || 0) * qty;
+          acc.kilojoules += (food.kilojoules || 0) * qty;
+          acc.protein += (food.protein || 0) * qty;
+          acc.carbs += (food.carbs || 0) * qty;
+          acc.fiber += (food.fiber || 0) * qty;
+          acc.sugars += (food.sugars || 0) * qty;
+          acc.fat += (food.fat || 0) * qty;
+          acc.saturatedFat += (food.saturatedFat || 0) * qty;
         }
         return acc;
       },
-      { calories: 0, protein: 0, carbs: 0, fat: 0 }
+      { calories: 0, kilojoules: 0, protein: 0, carbs: 0, fiber: 0, sugars: 0, fat: 0, saturatedFat: 0 }
     );
   };
 
@@ -138,7 +145,9 @@ export function Dashboard() {
     }, 0);
   };
 
-  const nutrition = dailyLog ? calculateNutrition(dailyLog) : { calories: 0, protein: 0, carbs: 0, fat: 0 };
+  const nutrition = dailyLog ? calculateNutrition(dailyLog) : { 
+    calories: 0, kilojoules: 0, protein: 0, carbs: 0, fiber: 0, sugars: 0, fat: 0, saturatedFat: 0 
+  };
   const caloriesBurned = dailyLog ? calculateCaloriesBurned(dailyLog) : 0;
   const totalSleep = dailyLog ? getTotalSleep(dailyLog) : 0;
   const netCalories = nutrition.calories - caloriesBurned;
@@ -169,7 +178,7 @@ export function Dashboard() {
           value={nutrition.calories}
           max={targets.calories}
           label="Calories"
-          unit=""
+          unit="kcal"
           color="#ef4444"
         />
         <ProgressRing
@@ -178,6 +187,44 @@ export function Dashboard() {
           label="Protein"
           unit="g"
           color="#22c55e"
+        />
+        <ProgressRing
+          value={nutrition.carbs}
+          max={targets.carbs}
+          label="Carbs"
+          unit="g"
+          color="#eab308"
+        />
+        <ProgressRing
+          value={nutrition.fat}
+          max={targets.fat}
+          label="Fat"
+          unit="g"
+          color="#f97316"
+        />
+        <ProgressRing
+          value={nutrition.fiber}
+          max={targets.fiber}
+          label="Fiber"
+          unit="g"
+          color="#84cc16"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <ProgressRing
+          value={nutrition.saturatedFat}
+          max={targets.saturatedFat}
+          label="Sat Fat"
+          unit="g"
+          color="#ec4899"
+        />
+        <ProgressRing
+          value={nutrition.sugars}
+          max={targets.sugars}
+          label="Sugars"
+          unit="g"
+          color="#8b5cf6"
         />
         <ProgressRing
           value={dailyLog?.steps || 0}
@@ -211,16 +258,39 @@ export function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Calories In</span>
-                <span className="font-medium">{Math.round(nutrition.calories)}</span>
+            <div className="space-y-3">
+              <div>
+                <div className="flex justify-between text-sm">
+                  <span>Energy (kcal)</span>
+                  <span className="font-medium">{Math.round(nutrition.calories)} / {targets.calories}</span>
+                </div>
+                <Progress value={(nutrition.calories / targets.calories) * 100} />
               </div>
-              <Progress value={(nutrition.calories / targets.calories) * 100} />
-              <div className="grid grid-cols-3 gap-2 text-sm text-muted-foreground">
-                <div>P: {Math.round(nutrition.protein)}g</div>
-                <div>C: {Math.round(nutrition.carbs)}g</div>
-                <div>F: {Math.round(nutrition.fat)}g</div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Protein</span>
+                  <span>{Math.round(nutrition.protein)}g</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Carbs</span>
+                  <span>{Math.round(nutrition.carbs)}g</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Fat</span>
+                  <span>{Math.round(nutrition.fat)}g</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Sat Fat</span>
+                  <span>{Math.round(nutrition.saturatedFat)}g</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Fiber</span>
+                  <span>{Math.round(nutrition.fiber)}g</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Sugars</span>
+                  <span>{Math.round(nutrition.sugars)}g</span>
+                </div>
               </div>
             </div>
           </CardContent>

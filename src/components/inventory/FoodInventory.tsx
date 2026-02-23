@@ -18,9 +18,14 @@ export function FoodInventory() {
   const [formData, setFormData] = useState({
     name: '',
     calories: '',
+    kilojoules: '',
     protein: '',
     carbs: '',
+    fiber: '',
+    sugars: '',
+    addedSugars: '',
     fat: '',
+    saturatedFat: '',
   });
 
   const foodItems = useLiveQuery(() => db.foodInventory.toArray());
@@ -32,20 +37,30 @@ export function FoodInventory() {
     if (editingItem) {
       await db.foodInventory.update(editingItem.id, {
         name: formData.name,
-        calories: Number(formData.calories),
-        protein: Number(formData.protein),
-        carbs: Number(formData.carbs),
-        fat: Number(formData.fat),
+        calories: Number(formData.calories) || 0,
+        kilojoules: Number(formData.kilojoules) || 0,
+        protein: Number(formData.protein) || 0,
+        carbs: Number(formData.carbs) || 0,
+        fiber: Number(formData.fiber) || 0,
+        sugars: Number(formData.sugars) || 0,
+        addedSugars: Number(formData.addedSugars) || 0,
+        fat: Number(formData.fat) || 0,
+        saturatedFat: Number(formData.saturatedFat) || 0,
         updatedAt: now,
       });
     } else {
       await db.foodInventory.add({
         id: uuidv4(),
         name: formData.name,
-        calories: Number(formData.calories),
-        protein: Number(formData.protein),
-        carbs: Number(formData.carbs),
-        fat: Number(formData.fat),
+        calories: Number(formData.calories) || 0,
+        kilojoules: Number(formData.kilojoules) || 0,
+        protein: Number(formData.protein) || 0,
+        carbs: Number(formData.carbs) || 0,
+        fiber: Number(formData.fiber) || 0,
+        sugars: Number(formData.sugars) || 0,
+        addedSugars: Number(formData.addedSugars) || 0,
+        fat: Number(formData.fat) || 0,
+        saturatedFat: Number(formData.saturatedFat) || 0,
         createdAt: now,
         updatedAt: now,
       });
@@ -58,10 +73,15 @@ export function FoodInventory() {
     setEditingItem(item);
     setFormData({
       name: item.name,
-      calories: item.calories.toString(),
-      protein: item.protein.toString(),
-      carbs: item.carbs.toString(),
-      fat: item.fat.toString(),
+      calories: item.calories?.toString() || '',
+      kilojoules: item.kilojoules?.toString() || '',
+      protein: item.protein?.toString() || '',
+      carbs: item.carbs?.toString() || '',
+      fiber: item.fiber?.toString() || '',
+      sugars: item.sugars?.toString() || '',
+      addedSugars: item.addedSugars?.toString() || '',
+      fat: item.fat?.toString() || '',
+      saturatedFat: item.saturatedFat?.toString() || '',
     });
     setOpen(true);
   };
@@ -73,7 +93,18 @@ export function FoodInventory() {
   const resetForm = () => {
     setOpen(false);
     setEditingItem(null);
-    setFormData({ name: '', calories: '', protein: '', carbs: '', fat: '' });
+    setFormData({
+      name: '',
+      calories: '',
+      kilojoules: '',
+      protein: '',
+      carbs: '',
+      fiber: '',
+      sugars: '',
+      addedSugars: '',
+      fat: '',
+      saturatedFat: '',
+    });
   };
 
   return (
@@ -87,7 +118,7 @@ export function FoodInventory() {
               Add Food
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>{editingItem ? 'Edit Food' : 'Add New Food'}</DialogTitle>
             </DialogHeader>
@@ -98,22 +129,38 @@ export function FoodInventory() {
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g., Chicken Breast"
+                  placeholder="e.g., Chicken Breast, Whole Milk"
                   required
                 />
               </div>
+              
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="calories">Calories</Label>
+                  <Label htmlFor="calories">Energy (kcal)</Label>
                   <Input
                     id="calories"
                     type="number"
                     min="0"
                     value={formData.calories}
                     onChange={(e) => setFormData({ ...formData, calories: e.target.value })}
-                    required
+                    placeholder="e.g., 165"
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="kilojoules">Energy (kJ)</Label>
+                  <Input
+                    id="kilojoules"
+                    type="number"
+                    min="0"
+                    value={formData.kilojoules}
+                    onChange={(e) => setFormData({ ...formData, kilojoules: e.target.value })}
+                    placeholder="e.g., 690"
+                  />
+                  <p className="text-xs text-muted-foreground">Auto: 1 kcal = 4.184 kJ</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="protein">Protein (g)</Label>
                   <Input
@@ -122,32 +169,77 @@ export function FoodInventory() {
                     min="0"
                     value={formData.protein}
                     onChange={(e) => setFormData({ ...formData, protein: e.target.value })}
-                    required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="carbs">Carbs (g)</Label>
-                  <Input
-                    id="carbs"
-                    type="number"
-                    min="0"
-                    value={formData.carbs}
-                    onChange={(e) => setFormData({ ...formData, carbs: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="fat">Fat (g)</Label>
+                  <Label htmlFor="fat">Total Fat (g)</Label>
                   <Input
                     id="fat"
                     type="number"
                     min="0"
                     value={formData.fat}
                     onChange={(e) => setFormData({ ...formData, fat: e.target.value })}
-                    required
                   />
                 </div>
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="carbs">Carbohydrates (g)</Label>
+                  <Input
+                    id="carbs"
+                    type="number"
+                    min="0"
+                    value={formData.carbs}
+                    onChange={(e) => setFormData({ ...formData, carbs: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="saturatedFat">Saturated Fat (g)</Label>
+                  <Input
+                    id="saturatedFat"
+                    type="number"
+                    min="0"
+                    value={formData.saturatedFat}
+                    onChange={(e) => setFormData({ ...formData, saturatedFat: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fiber">Fiber (g)</Label>
+                  <Input
+                    id="fiber"
+                    type="number"
+                    min="0"
+                    value={formData.fiber}
+                    onChange={(e) => setFormData({ ...formData, fiber: e.target.value })}
+                    placeholder="Dietary fiber"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sugars">Total Sugars (g)</Label>
+                  <Input
+                    id="sugars"
+                    type="number"
+                    min="0"
+                    value={formData.sugars}
+                    onChange={(e) => setFormData({ ...formData, sugars: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="addedSugars">Added Sugars (g)</Label>
+                  <Input
+                    id="addedSugars"
+                    type="number"
+                    min="0"
+                    value={formData.addedSugars}
+                    onChange={(e) => setFormData({ ...formData, addedSugars: e.target.value })}
+                  />
+                </div>
+              </div>
+
               <Button type="submit" className="w-full">
                 {editingItem ? 'Update' : 'Add'} Food
               </Button>
@@ -157,41 +249,49 @@ export function FoodInventory() {
       </CardHeader>
       <CardContent>
         {foodItems && foodItems.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Cal</TableHead>
-                <TableHead>Protein</TableHead>
-                <TableHead>Carbs</TableHead>
-                <TableHead>Fat</TableHead>
-                <TableHead className="w-[100px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {foodItems.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{item.calories}</Badge>
-                  </TableCell>
-                  <TableCell>{item.protein}g</TableCell>
-                  <TableCell>{item.carbs}g</TableCell>
-                  <TableCell>{item.fat}g</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Cal</TableHead>
+                  <TableHead>kJ</TableHead>
+                  <TableHead>Protein</TableHead>
+                  <TableHead>Carbs</TableHead>
+                  <TableHead>Fiber</TableHead>
+                  <TableHead>Sugars</TableHead>
+                  <TableHead>Fat</TableHead>
+                  <TableHead>Sat Fat</TableHead>
+                  <TableHead className="w-[80px]"></TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {foodItems.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">{item.name}</TableCell>
+                    <TableCell><Badge variant="secondary">{item.calories || 0}</Badge></TableCell>
+                    <TableCell className="text-muted-foreground">{item.kilojoules || 0}</TableCell>
+                    <TableCell>{item.protein || 0}g</TableCell>
+                    <TableCell>{item.carbs || 0}g</TableCell>
+                    <TableCell>{item.fiber || 0}g</TableCell>
+                    <TableCell>{item.sugars || 0}g</TableCell>
+                    <TableCell>{item.fat || 0}g</TableCell>
+                    <TableCell>{item.saturatedFat || 0}g</TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         ) : (
           <p className="text-muted-foreground text-center py-4">
             No food items yet. Add your first food to get started.

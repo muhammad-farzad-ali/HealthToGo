@@ -2,9 +2,14 @@ export interface FoodItem {
   id: string;
   name: string;
   calories: number;
+  kilojoules: number;
   protein: number;
   carbs: number;
+  fiber: number;
+  sugars: number;
+  addedSugars: number;
   fat: number;
+  saturatedFat: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -69,9 +74,13 @@ export interface DailyLog {
 
 export interface DailyTargets {
   calories: number;
+  kilojoules: number;
   protein: number;
   carbs: number;
+  fiber: number;
+  sugars: number;
   fat: number;
+  saturatedFat: number;
   waterMl: number;
   steps: number;
   sleepHours: number;
