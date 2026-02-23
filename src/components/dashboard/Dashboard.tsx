@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { format, subDays } from 'date-fns';
 import { db, DEFAULT_TARGETS } from '@/lib/db';
+import { useProfile } from '@/hooks/useProfile';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -28,7 +29,7 @@ interface ProgressRingProps {
   color?: string;
 }
 
-function ProgressRing({ value, max, label, unit, color }: ProgressRingProps) {
+function ProgressRing({ value, max, unit, color }: ProgressRingProps) {
   const percentage = Math.min((value / max) * 100, 100);
   
   return (
@@ -48,33 +49,32 @@ function ProgressRing({ value, max, label, unit, color }: ProgressRingProps) {
             cx="48"
             cy="48"
             r="40"
-            stroke={color || "currentColor"}
+            stroke={color || 'currentColor'}
             strokeWidth="8"
             fill="transparent"
-            strokeDasharray={`${2 * Math.PI * 40}`}
-            strokeDashoffset={`${2 * Math.PI * 40 * (1 - percentage / 100)}`}
-            className="transition-all duration-500"
-            style={{ color: color || '#3b82f6' }}
+            strokeDasharray={`${percentage * 2.51} 251`}
+            strokeLinecap="round"
           />
         </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div className="absolute inset-0 flex items-center justify-center">
           <span className="text-lg font-bold">{Math.round(percentage)}%</span>
         </div>
       </div>
-      <span className="mt-2 text-sm text-muted-foreground">{label}</span>
       <span className="text-xs text-muted-foreground">{Math.round(value)}/{max}{unit}</span>
     </div>
   );
 }
 
 export function Dashboard() {
+  const { currentProfile } = useProfile();
   const today = formatDate(new Date());
   const dailyLog = useLiveQuery(async () => {
+    if (!currentProfile) return null;
     const log = await db.dailyLogs.get(today);
     return log || null;
-  }, [today]);
+  }, [today, currentProfile?.id]);
 
-  const settings = useLiveQuery(() => db.userSettings.get('default'));
+  const settings = useLiveQuery(() => currentProfile ? db.userSettings.get(currentProfile.id) : undefined, [currentProfile?.id]);
   const targets = settings?.dailyTargets || DEFAULT_TARGETS;
   const foodInventory = useLiveQuery(() => db.foodInventory.toArray());
   const workoutInventory = useLiveQuery(() => db.workoutInventory.toArray());
@@ -117,6 +117,7 @@ export function Dashboard() {
   const periodDays = parseInt(timePeriod);
 
   const periodLogs = useLiveQuery(async () => {
+    if (!currentProfile) return [];
     const dates = getDatesForPeriod(periodDays);
     const logs = await Promise.all(
       dates.map(date => db.dailyLogs.get(date))
@@ -126,7 +127,7 @@ export function Dashboard() {
       fullDate: dates[i],
       log: log || null,
     }));
-  }, [periodDays]);
+  }, [periodDays, currentProfile?.id]);
 
   const calculateNutrition = (log: any) => {
     if (!log || !foodInventory) return { 

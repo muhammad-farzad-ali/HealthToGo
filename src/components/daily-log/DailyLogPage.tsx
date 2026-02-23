@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { format, addDays, subDays } from 'date-fns';
 import { db, DEFAULT_TARGETS } from '@/lib/db';
 import type { DailyLog, PhysiologicalMetrics, WellbeingMetrics } from '@/lib/types';
+import { useProfile } from '@/hooks/useProfile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,9 +22,11 @@ function formatDate(date: Date): string {
   return format(date, 'yyyy-MM-dd');
 }
 
-function getEmptyDailyLog(date: string): DailyLog {
+function getEmptyDailyLog(date: string, profileId: string): DailyLog {
   return {
+    id: date,
     date,
+    profileId,
     foodItems: [],
     workoutItems: [],
     steps: 0,
@@ -43,6 +46,7 @@ function getEmptyDailyLog(date: string): DailyLog {
 export function DailyLogPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const dateKey = formatDate(currentDate);
+  const { currentProfile } = useProfile();
   
   const [foodDialogOpen, setFoodDialogOpen] = useState(false);
   const [workoutDialogOpen, setWorkoutDialogOpen] = useState(false);
@@ -55,13 +59,14 @@ export function DailyLogPage() {
   const [sleepEnd, setSleepEnd] = useState('07:00');
 
   const dailyLog = useLiveQuery(async () => {
+    if (!currentProfile) return getEmptyDailyLog(dateKey, '');
     const log = await db.dailyLogs.get(dateKey);
-    return log || getEmptyDailyLog(dateKey);
-  }, [dateKey]);
+    return log || getEmptyDailyLog(dateKey, currentProfile.id);
+  }, [dateKey, currentProfile?.id]);
 
   const foodInventory = useLiveQuery(() => db.foodInventory.toArray());
   const workoutInventory = useLiveQuery(() => db.workoutInventory.toArray());
-  const settings = useLiveQuery(() => db.userSettings.get('default'));
+  const settings = useLiveQuery(() => currentProfile ? db.userSettings.get(currentProfile.id) : undefined);
   const targets = settings?.dailyTargets || DEFAULT_TARGETS;
 
   const calculateNutrition = () => {
@@ -109,9 +114,10 @@ export function DailyLogPage() {
   const caloriesBurned = calculateCaloriesBurned();
 
   const ensureLogExists = async () => {
+    if (!currentProfile) return;
     const existing = await db.dailyLogs.get(dateKey);
     if (!existing) {
-      await db.dailyLogs.add(getEmptyDailyLog(dateKey));
+      await db.dailyLogs.add(getEmptyDailyLog(dateKey, currentProfile.id));
     }
   };
 

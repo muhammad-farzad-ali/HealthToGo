@@ -1,12 +1,13 @@
 import Dexie, { type EntityTable } from 'dexie';
-import type { FoodItem, WorkoutItem, ActivityItem, DailyLog, UserSettings } from './types';
+import type { FoodItem, WorkoutItem, ActivityItem, DailyLog, UserSettings, Profile } from './types';
 
 const db = new Dexie('HealthToGoDB') as Dexie & {
   foodInventory: EntityTable<FoodItem, 'id'>;
   workoutInventory: EntityTable<WorkoutItem, 'id'>;
   activityInventory: EntityTable<ActivityItem, 'id'>;
-  dailyLogs: EntityTable<DailyLog, 'date'>;
+  dailyLogs: EntityTable<DailyLog, 'id'>;
   userSettings: EntityTable<UserSettings, 'id'>;
+  profiles: EntityTable<Profile, 'id'>;
 };
 
 db.version(1).stores({
@@ -19,6 +20,41 @@ db.version(1).stores({
 
 db.version(2).upgrade(() => {
   return Promise.resolve();
+});
+
+db.version(3).stores({
+  foodInventory: 'id, name, createdAt',
+  workoutInventory: 'id, name, createdAt',
+  activityInventory: 'id, name, type, createdAt',
+  dailyLogs: 'id, date, profileId',
+  userSettings: 'id, profileId',
+  profiles: 'id, name, isActive',
+}).upgrade(async (tx) => {
+  const existingProfiles = await tx.table('profiles').toArray();
+  if (existingProfiles.length === 0) {
+    const defaultProfileId = 'default';
+    await tx.table('profiles').add({
+      id: defaultProfileId,
+      name: 'Default',
+      createdAt: new Date(),
+      isActive: true,
+    });
+    
+    const existingLogs = await tx.table('dailyLogs').toArray();
+    for (const log of existingLogs) {
+      await tx.table('dailyLogs').update(log.id || log.date, {
+        id: log.date,
+        profileId: defaultProfileId,
+      });
+    }
+    
+    const existingSettings = await tx.table('userSettings').toArray();
+    for (const settings of existingSettings) {
+      await tx.table('userSettings').update(settings.id, {
+        profileId: defaultProfileId,
+      });
+    }
+  }
 });
 
 export { db };
@@ -45,11 +81,12 @@ export const DEFAULT_CUSTOM_METRICS = [
   { id: 'potassium', name: 'Potassium', unit: 'mg', target: 3500, type: 'number' as const },
 ];
 
-export async function initializeSettings() {
-  const existingSettings = await db.userSettings.get('default');
+export async function initializeSettings(profileId: string) {
+  const existingSettings = await db.userSettings.get(profileId);
   if (!existingSettings) {
     await db.userSettings.add({
-      id: 'default',
+      id: profileId,
+      profileId,
       dailyTargets: DEFAULT_TARGETS,
       customMetrics: DEFAULT_CUSTOM_METRICS,
     });

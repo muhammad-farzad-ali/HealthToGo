@@ -85,7 +85,9 @@ export interface BowelMovement {
 }
 
 export interface DailyLog {
+  id: string;
   date: string;
+  profileId: string;
   foodItems: LoggedFood[];
   workoutItems: LoggedWorkout[];
   steps: number;
@@ -115,8 +117,16 @@ export interface DailyTargets {
   sleepHours: number;
 }
 
+export interface Profile {
+  id: string;
+  name: string;
+  createdAt: Date;
+  isActive: boolean;
+}
+
 export interface UserSettings {
   id: string;
+  profileId: string;
   dailyTargets: DailyTargets;
   customMetrics: CustomMetric[];
 }

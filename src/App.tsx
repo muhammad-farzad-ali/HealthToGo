@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ProfileProvider, useProfile } from '@/hooks/useProfile';
 import { initializeSettings } from '@/lib/db';
 import { DailyLogPage } from '@/components/daily-log/DailyLogPage';
 import { InventoryPage } from '@/components/inventory/InventoryPage';
@@ -7,15 +8,18 @@ import { SettingsPage } from '@/components/settings/SettingsPage';
 
 type Tab = 'dashboard' | 'log' | 'inventory' | 'settings';
 
-function App() {
+function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+  const { currentProfile, profiles, switchProfile, addProfile, deleteProfile } = useProfile();
 
   useEffect(() => {
-    initializeSettings().then(() => setIsLoading(false));
-  }, []);
+    if (currentProfile) {
+      initializeSettings(currentProfile.id).then(() => setIsLoading(false));
+    }
+  }, [currentProfile?.id]);
 
-  if (isLoading) {
+  if (isLoading || !currentProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-lg">Loading...</div>
@@ -27,8 +31,46 @@ function App() {
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container mx-auto py-4 px-4">
-          <h1 className="text-2xl font-bold">HealthToGo</h1>
-          <p className="text-sm text-muted-foreground">Your offline wellness companion</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">HealthToGo</h1>
+              <p className="text-sm text-muted-foreground">Your offline wellness companion</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={currentProfile.id}
+                onChange={(e) => switchProfile(e.target.value)}
+                className="px-3 py-1 border rounded-md bg-background"
+              >
+                {profiles.map((profile) => (
+                  <option key={profile.id} value={profile.id}>
+                    {profile.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => {
+                  const name = prompt('Enter profile name:');
+                  if (name) addProfile(name);
+                }}
+                className="px-2 py-1 text-sm border rounded-md hover:bg-muted"
+              >
+                + Add
+              </button>
+              {profiles.length > 1 && (
+                <button
+                  onClick={() => {
+                    if (confirm(`Delete profile "${currentProfile.name}"?`)) {
+                      deleteProfile(currentProfile.id);
+                    }
+                  }}
+                  className="px-2 py-1 text-sm text-red-500 border border-red-500 rounded-md hover:bg-red-50"
+                >
+                  Delete
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </header>
       <main className="container mx-auto py-6 px-4">
@@ -80,6 +122,14 @@ function App() {
         {activeTab === 'settings' && <SettingsPage />}
       </main>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <ProfileProvider>
+      <AppContent />
+    </ProfileProvider>
   );
 }
 

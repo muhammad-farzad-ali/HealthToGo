@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { v4 as uuidv4 } from 'uuid';
 import { db, DEFAULT_TARGETS, DEFAULT_CUSTOM_METRICS } from '@/lib/db';
 import type { DailyTargets, CustomMetric } from '@/lib/types';
+import { useProfile } from '@/hooks/useProfile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +15,8 @@ import { Pencil, Trash2, Plus, Save } from 'lucide-react';
 import { DataTools } from './DataTools';
 
 export function SettingsPage() {
-  const settings = useLiveQuery(() => db.userSettings.get('default'));
+  const { currentProfile } = useProfile();
+  const settings = useLiveQuery(() => currentProfile ? db.userSettings.get(currentProfile.id) : undefined, [currentProfile?.id]);
   const targets = settings?.dailyTargets || DEFAULT_TARGETS;
   const customMetrics = settings?.customMetrics || DEFAULT_CUSTOM_METRICS;
 
@@ -31,8 +33,8 @@ export function SettingsPage() {
   });
 
   const handleSaveTargets = async () => {
-    if (!settings) return;
-    await db.userSettings.update('default', { dailyTargets: editingTargets });
+    if (!settings || !currentProfile) return;
+    await db.userSettings.update(currentProfile.id, { dailyTargets: editingTargets });
     setTargetDialogOpen(false);
   };
 
@@ -54,7 +56,7 @@ export function SettingsPage() {
   };
 
   const handleSaveMetric = async () => {
-    if (!metricForm.name || !metricForm.unit) return;
+    if (!metricForm.name || !metricForm.unit || !currentProfile) return;
 
     const newMetric: CustomMetric = {
       id: editingMetric?.id || uuidv4(),
@@ -66,9 +68,9 @@ export function SettingsPage() {
 
     if (editingMetric) {
       const updated = customMetrics.map((m) => (m.id === editingMetric.id ? newMetric : m));
-      await db.userSettings.update('default', { customMetrics: updated });
+      await db.userSettings.update(currentProfile.id, { customMetrics: updated });
     } else {
-      await db.userSettings.update('default', { customMetrics: [...customMetrics, newMetric] });
+      await db.userSettings.update(currentProfile.id, { customMetrics: [...customMetrics, newMetric] });
     }
 
     setMetricDialogOpen(false);
@@ -76,13 +78,16 @@ export function SettingsPage() {
   };
 
   const handleDeleteMetric = async (id: string) => {
+    if (!currentProfile) return;
     const updated = customMetrics.filter((m) => m.id !== id);
-    await db.userSettings.update('default', { customMetrics: updated });
+    await db.userSettings.update(currentProfile.id, { customMetrics: updated });
   };
 
   const resetToDefaults = async () => {
+    if (!currentProfile) return;
     await db.userSettings.put({
-      id: 'default',
+      id: currentProfile.id,
+      profileId: currentProfile.id,
       dailyTargets: DEFAULT_TARGETS,
       customMetrics: DEFAULT_CUSTOM_METRICS,
     });
