@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
+import { seedSampleData } from '@/lib/db';
 import type { Profile } from '@/lib/types';
 
 interface ProfileContextType {
@@ -46,6 +47,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
           setCurrentProfileId(allProfiles[0].id);
         }
       }
+      await seedSampleData();
       setIsLoading(false);
     };
     init();
