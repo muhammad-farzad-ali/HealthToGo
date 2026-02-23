@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { v4 as uuidv4 } from 'uuid';
 import { format, addDays, subDays } from 'date-fns';
 import { db, DEFAULT_TARGETS } from '@/lib/db';
-import type { DailyLog } from '@/lib/types';
+import type { DailyLog, PhysiologicalMetrics } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,7 +15,7 @@ import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, Plus, Trash2, Utensils, Dumbbell, Moon, Coffee, Timer, Monitor, Brain } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, Utensils, Dumbbell, Moon, Coffee, Timer, Monitor, Brain, Activity, Scale, Ruler, Heart, Thermometer } from 'lucide-react';
 
 function formatDate(date: Date): string {
   return format(date, 'yyyy-MM-dd');
@@ -34,6 +34,7 @@ function getEmptyDailyLog(date: string): DailyLog {
     screenMins: 0,
     meditationMins: 0,
     customMetrics: {},
+    physiological: {},
   };
 }
 
@@ -201,6 +202,16 @@ export function DailyLogPage() {
     const currentMetrics = log.customMetrics || {};
     await db.dailyLogs.update(dateKey, {
       customMetrics: { ...currentMetrics, [metricId]: value },
+    });
+  };
+
+  const updatePhysiological = async (field: keyof PhysiologicalMetrics, value: number | undefined) => {
+    await ensureLogExists();
+    const log = await db.dailyLogs.get(dateKey);
+    if (!log) return;
+    const current = log.physiological || {};
+    await db.dailyLogs.update(dateKey, {
+      physiological: { ...current, [field]: value },
     });
   };
 
@@ -576,6 +587,115 @@ export function DailyLogPage() {
               </div>
             </CardContent>
           </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Physiological Metrics
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm flex items-center gap-1">
+                  <Heart className="h-3 w-3 text-red-500" />
+                  Heart Rate
+                </Label>
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="bpm"
+                  value={dailyLog?.physiological?.heartRate || ''}
+                  onChange={(e) => updatePhysiological('heartRate', Number(e.target.value) || undefined)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm flex items-center gap-1">
+                  <Scale className="h-3 w-3 text-blue-500" />
+                  Weight (kg)
+                </Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder="kg"
+                  value={dailyLog?.physiological?.weight || ''}
+                  onChange={(e) => updatePhysiological('weight', Number(e.target.value) || undefined)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm flex items-center gap-1">
+                  <Ruler className="h-3 w-3 text-green-500" />
+                  Waist (cm)
+                </Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder="cm"
+                  value={dailyLog?.physiological?.waistCm || ''}
+                  onChange={(e) => updatePhysiological('waistCm', Number(e.target.value) || undefined)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm flex items-center gap-1">
+                  <Thermometer className="h-3 w-3 text-orange-500" />
+                  Body Temp (°C)
+                </Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder="°C"
+                  value={dailyLog?.physiological?.bodyTemp || ''}
+                  onChange={(e) => updatePhysiological('bodyTemp', Number(e.target.value) || undefined)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm">Blood Pressure Sys</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="mmHg"
+                  value={dailyLog?.physiological?.bloodPressureSystolic || ''}
+                  onChange={(e) => updatePhysiological('bloodPressureSystolic', Number(e.target.value) || undefined)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm">Blood Pressure Dia</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="mmHg"
+                  value={dailyLog?.physiological?.bloodPressureDiastolic || ''}
+                  onChange={(e) => updatePhysiological('bloodPressureDiastolic', Number(e.target.value) || undefined)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm">Blood Sugar (mg/dL)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="mg/dL"
+                  value={dailyLog?.physiological?.bloodSugar || ''}
+                  onChange={(e) => updatePhysiological('bloodSugar', Number(e.target.value) || undefined)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm">O2 Saturation (%)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  placeholder="%"
+                  value={dailyLog?.physiological?.oxygenSaturation || ''}
+                  onChange={(e) => updatePhysiological('oxygenSaturation', Number(e.target.value) || undefined)}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
           {settings?.customMetrics && settings.customMetrics.length > 0 && (
             <Card>

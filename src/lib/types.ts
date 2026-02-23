@@ -56,6 +56,18 @@ export interface CustomMetric {
   unit: string;
   target?: number;
   type: 'number' | 'boolean';
+  category?: 'nutrition' | 'physiological';
+}
+
+export interface PhysiologicalMetrics {
+  heartRate?: number;
+  weight?: number;
+  waistCm?: number;
+  bodyTemp?: number;
+  bloodPressureSystolic?: number;
+  bloodPressureDiastolic?: number;
+  bloodSugar?: number;
+  oxygenSaturation?: number;
 }
 
 export interface DailyLog {
@@ -70,6 +82,7 @@ export interface DailyLog {
   screenMins: number;
   meditationMins: number;
   customMetrics: Record<string, number | boolean>;
+  physiological?: PhysiologicalMetrics;
 }
 
 export interface DailyTargets {

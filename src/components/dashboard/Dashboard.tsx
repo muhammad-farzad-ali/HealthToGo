@@ -4,7 +4,7 @@ import { db, DEFAULT_TARGETS } from '@/lib/db';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Utensils, Dumbbell, Droplets } from 'lucide-react';
+import { Utensils, Dumbbell, Droplets, Activity, Scale, Ruler, Heart, Thermometer } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -341,14 +341,73 @@ export function Dashboard() {
                 <span className="font-medium">{(dailyLog?.waterMl || 0)}ml</span>
               </div>
               <Progress value={((dailyLog?.waterMl || 0) / targets.waterMl) * 100} />
-              <div className="flex justify-between text-sm">
-                <span>Caffeine</span>
-                <span className="font-medium">{(dailyLog?.caffeineMg || 0)}mg</span>
-              </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {(dailyLog?.physiological) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Physiological Metrics
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {dailyLog.physiological.heartRate && (
+                <div className="text-center p-3 bg-muted rounded-lg">
+                  <Heart className="h-4 w-4 text-red-500 mx-auto mb-1" />
+                  <div className="text-lg font-bold">{dailyLog.physiological.heartRate}</div>
+                  <div className="text-xs text-muted-foreground">bpm</div>
+                </div>
+              )}
+              {dailyLog.physiological.weight && (
+                <div className="text-center p-3 bg-muted rounded-lg">
+                  <Scale className="h-4 w-4 text-blue-500 mx-auto mb-1" />
+                  <div className="text-lg font-bold">{dailyLog.physiological.weight}</div>
+                  <div className="text-xs text-muted-foreground">kg</div>
+                </div>
+              )}
+              {dailyLog.physiological.waistCm && (
+                <div className="text-center p-3 bg-muted rounded-lg">
+                  <Ruler className="h-4 w-4 text-green-500 mx-auto mb-1" />
+                  <div className="text-lg font-bold">{dailyLog.physiological.waistCm}</div>
+                  <div className="text-xs text-muted-foreground">cm</div>
+                </div>
+              )}
+              {dailyLog.physiological.bodyTemp && (
+                <div className="text-center p-3 bg-muted rounded-lg">
+                  <Thermometer className="h-4 w-4 text-orange-500 mx-auto mb-1" />
+                  <div className="text-lg font-bold">{dailyLog.physiological.bodyTemp}°</div>
+                  <div className="text-xs text-muted-foreground">C</div>
+                </div>
+              )}
+              {dailyLog.physiological.bloodPressureSystolic && (
+                <div className="text-center p-3 bg-muted rounded-lg">
+                  <div className="text-lg font-bold">
+                    {dailyLog.physiological.bloodPressureSystolic}/{dailyLog.physiological.bloodPressureDiastolic || '--'}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Blood Pressure</div>
+                </div>
+              )}
+              {dailyLog.physiological.bloodSugar && (
+                <div className="text-center p-3 bg-muted rounded-lg">
+                  <div className="text-lg font-bold">{dailyLog.physiological.bloodSugar}</div>
+                  <div className="text-xs text-muted-foreground">Blood Sugar mg/dL</div>
+                </div>
+              )}
+              {dailyLog.physiological.oxygenSaturation && (
+                <div className="text-center p-3 bg-muted rounded-lg">
+                  <div className="text-lg font-bold">{dailyLog.physiological.oxygenSaturation}%</div>
+                  <div className="text-xs text-muted-foreground">O2 Saturation</div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {settings?.customMetrics && settings.customMetrics.length > 0 && (
         <Card>
