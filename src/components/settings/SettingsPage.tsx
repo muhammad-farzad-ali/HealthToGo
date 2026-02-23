@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
 import { Pencil, Trash2, Plus, Save } from 'lucide-react';
+import { DataTools } from './DataTools';
 
 export function SettingsPage() {
   const settings = useLiveQuery(() => db.userSettings.get('default'));
@@ -266,6 +267,8 @@ export function SettingsPage() {
           )}
         </CardContent>
       </Card>
+
+      <DataTools />
 
       <Dialog open={metricDialogOpen} onOpenChange={setMetricDialogOpen}>
         <DialogContent>
