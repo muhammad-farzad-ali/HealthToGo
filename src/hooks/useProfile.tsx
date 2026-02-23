@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import type { Profile } from '@/lib/types';
@@ -17,23 +17,41 @@ const ProfileContext = createContext<ProfileContextType | null>(null);
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const [currentProfileId, setCurrentProfileId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const initialized = useRef(false);
   
   const profiles = useLiveQuery(() => db.profiles.toArray()) || [];
-  const currentProfile = profiles.find(p => p.id === currentProfileId) || null;
 
   useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+
     const init = async () => {
-      const activeProfile = profiles.find(p => p.isActive);
-      if (activeProfile) {
-        setCurrentProfileId(activeProfile.id);
-      } else if (profiles.length > 0) {
-        await db.profiles.update(profiles[0].id, { isActive: true });
-        setCurrentProfileId(profiles[0].id);
+      const allProfiles = await db.profiles.toArray();
+      
+      if (allProfiles.length === 0) {
+        const defaultId = 'default';
+        await db.profiles.add({
+          id: defaultId,
+          name: 'Default',
+          createdAt: new Date(),
+          isActive: true,
+        });
+        setCurrentProfileId(defaultId);
+      } else {
+        const activeProfile = allProfiles.find(p => p.isActive);
+        if (activeProfile) {
+          setCurrentProfileId(activeProfile.id);
+        } else {
+          await db.profiles.update(allProfiles[0].id, { isActive: true });
+          setCurrentProfileId(allProfiles[0].id);
+        }
       }
       setIsLoading(false);
     };
     init();
-  }, [profiles]);
+  }, []);
+
+  const currentProfile = profiles.find(p => p.id === currentProfileId) || null;
 
   const switchProfile = async (id: string) => {
     if (currentProfileId) {
@@ -49,11 +67,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       id,
       name,
       createdAt: new Date(),
-      isActive: profiles.length === 0,
+      isActive: false,
     });
-    if (profiles.length === 0) {
-      setCurrentProfileId(id);
-    }
   };
 
   const deleteProfile = async (id: string) => {
@@ -61,10 +76,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     await db.dailyLogs.where('profileId').equals(id).delete();
     await db.userSettings.delete(id);
     const remaining = await db.profiles.toArray();
-    if (remaining.length > 0 && !currentProfileId) {
+    if (remaining.length > 0) {
       await db.profiles.update(remaining[0].id, { isActive: true });
       setCurrentProfileId(remaining[0].id);
-    } else if (remaining.length === 0) {
+    } else {
       setCurrentProfileId(null);
     }
   };
