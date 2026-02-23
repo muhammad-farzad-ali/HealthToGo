@@ -1,25 +1,53 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/lib/db';
+import { db, seedDemoData, factoryReset } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Download, Upload, AlertCircle, CheckCircle, Share2 } from 'lucide-react';
+import { Download, Upload, AlertCircle, CheckCircle, Share2, Sparkles, RotateCcw } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { format } from 'date-fns';
+import { useProfile } from '@/hooks/useProfile';
 
 export function DataTools() {
+  const { currentProfile } = useProfile();
   const [exportStatus, setExportStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [importMode, setImportMode] = useState<'merge' | 'overwrite'>('merge');
   const [shareStatus, setShareStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [shareImportStatus, setShareImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [shareImportMode, setShareImportMode] = useState<'merge' | 'overwrite'>('merge');
+  const [demoStatus, setDemoStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [resetStatus, setResetStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const shareFileInputRef = useRef<HTMLInputElement>(null);
 
   const foodCount = useLiveQuery(() => db.foodInventory.count());
   const workoutCount = useLiveQuery(() => db.workoutInventory.count());
   const logCount = useLiveQuery(() => db.dailyLogs.count());
+
+  const handleSeedDemo = async () => {
+    if (!currentProfile) return;
+    try {
+      setDemoStatus('idle');
+      await seedDemoData(currentProfile.id);
+      setDemoStatus('success');
+      setTimeout(() => setDemoStatus('idle'), 3000);
+    } catch (e) {
+      setDemoStatus('error');
+    }
+  };
+
+  const handleFactoryReset = async () => {
+    if (!confirm('Are you sure you want to delete ALL data? This cannot be undone.')) return;
+    try {
+      setResetStatus('idle');
+      await factoryReset();
+      setResetStatus('success');
+      window.location.reload();
+    } catch (e) {
+      setResetStatus('error');
+    }
+  };
 
   const handleExport = async () => {
     try {
@@ -216,6 +244,22 @@ export function DataTools() {
             <div className="text-sm text-muted-foreground">Daily Logs</div>
           </div>
         </div>
+
+        <div className="flex gap-4 flex-wrap">
+          <Button onClick={handleSeedDemo} className="gap-2" variant="outline">
+            <Sparkles className="h-4 w-4" />
+            Try Demo Data
+            {demoStatus === 'success' && <CheckCircle className="h-4 w-4 ml-1 text-green-500" />}
+          </Button>
+          <Button onClick={handleFactoryReset} className="gap-2" variant="outline">
+            <RotateCcw className="h-4 w-4" />
+            Factory Reset
+            {resetStatus === 'success' && <CheckCircle className="h-4 w-4 ml-1 text-green-500" />}
+          </Button>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Demo Data: Seeds sample foods, workouts, and 14 days of daily logs. Factory Reset: Deletes ALL data and starts fresh.
+        </p>
 
         <div className="space-y-4">
           <div className="space-y-2">
