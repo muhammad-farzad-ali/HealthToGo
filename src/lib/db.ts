@@ -17,6 +17,10 @@ db.version(1).stores({
   userSettings: 'id',
 });
 
+db.version(2).upgrade(() => {
+  return Promise.resolve();
+});
+
 export { db };
 
 export const DEFAULT_TARGETS = {
