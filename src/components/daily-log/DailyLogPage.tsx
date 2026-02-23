@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { v4 as uuidv4 } from 'uuid';
 import { format, addDays, subDays } from 'date-fns';
 import { db, DEFAULT_TARGETS } from '@/lib/db';
-import type { DailyLog, PhysiologicalMetrics } from '@/lib/types';
+import type { DailyLog, PhysiologicalMetrics, WellbeingMetrics } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,6 +35,8 @@ function getEmptyDailyLog(date: string): DailyLog {
     meditationMins: 0,
     customMetrics: {},
     physiological: {},
+    wellbeing: {},
+    bowelMovements: [],
   };
 }
 
@@ -212,6 +214,26 @@ export function DailyLogPage() {
     const current = log.physiological || {};
     await db.dailyLogs.update(dateKey, {
       physiological: { ...current, [field]: value },
+    });
+  };
+
+  const updateWellbeing = async (field: keyof WellbeingMetrics, value: string | number | undefined) => {
+    await ensureLogExists();
+    const log = await db.dailyLogs.get(dateKey);
+    if (!log) return;
+    const current = log.wellbeing || {};
+    await db.dailyLogs.update(dateKey, {
+      wellbeing: { ...current, [field]: value },
+    });
+  };
+
+  const addBowelMovement = async (consistency?: 1|2|3|4|5|6|7, discomfort?: 'none'|'mild'|'moderate'|'severe') => {
+    await ensureLogExists();
+    const log = await db.dailyLogs.get(dateKey);
+    if (!log) return;
+    const movements = log.bowelMovements || [];
+    await db.dailyLogs.update(dateKey, {
+      bowelMovements: [...movements, { id: uuidv4(), time: new Date().toISOString(), consistency, discomfort }],
     });
   };
 
@@ -694,6 +716,150 @@ export function DailyLogPage() {
                 />
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Mood & Wellbeing
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm">Mood (1-10)</Label>
+              <div className="flex gap-1">
+                {[1,2,3,4,5,6,7,8,9,10].map(num => (
+                  <button
+                    key={num}
+                    type="button"
+                    onClick={() => updateWellbeing('mood', num)}
+                    className={`flex-1 py-2 text-xs rounded transition-colors ${
+                      dailyLog?.wellbeing?.mood === num 
+                        ? 'bg-green-500 text-white' 
+                        : 'bg-muted hover:bg-muted/80'
+                    }`}
+                  >
+                    {num}
+                  </button>
+                ))}
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Very Low</span>
+                <span>Very High</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm">Stress Level (1-10)</Label>
+              <div className="flex gap-1">
+                {[1,2,3,4,5,6,7,8,9,10].map(num => (
+                  <button
+                    key={num}
+                    type="button"
+                    onClick={() => updateWellbeing('stress', num)}
+                    className={`flex-1 py-2 text-xs rounded transition-colors ${
+                      dailyLog?.wellbeing?.stress === num 
+                        ? 'bg-red-500 text-white' 
+                        : 'bg-muted hover:bg-muted/80'
+                    }`}
+                  >
+                    {num}
+                  </button>
+                ))}
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Low</span>
+                <span>High</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm">Energy Level (1-10)</Label>
+              <div className="flex gap-1">
+                {[1,2,3,4,5,6,7,8,9,10].map(num => (
+                  <button
+                    key={num}
+                    type="button"
+                    onClick={() => updateWellbeing('energy', num)}
+                    className={`flex-1 py-2 text-xs rounded transition-colors ${
+                      dailyLog?.wellbeing?.energy === num 
+                        ? 'bg-yellow-500 text-white' 
+                        : 'bg-muted hover:bg-muted/80'
+                    }`}
+                  >
+                    {num}
+                  </button>
+                ))}
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Exhausted</span>
+                <span>Energized</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm">Journal / Notes</Label>
+              <textarea
+                className="w-full min-h-[80px] p-2 border rounded-md text-sm"
+                placeholder="How are you feeling today? Any notes..."
+                value={dailyLog?.wellbeing?.notes || ''}
+                onChange={(e) => updateWellbeing('notes', e.target.value)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              Bowel Movements
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex gap-2 flex-wrap">
+              {[1,2,3,4,5,6,7].map(consistency => (
+                  <Button
+                    key={consistency}
+                    variant={dailyLog?.bowelMovements?.some(b => b.consistency === consistency) ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => addBowelMovement(consistency as 1|2|3|4|5|6|7)}
+                    className="text-xs"
+                  >
+                    {consistency}
+                  </Button>
+                ))}
+            </div>
+            <div className="flex justify-between text-xs text-muted-foreground mb-2">
+              <span>Hard</span>
+              <span>Normal</span>
+              <span>Loose</span>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-sm">Discomfort</Label>
+              <Select 
+                value={dailyLog?.bowelMovements?.[0]?.discomfort || ''}
+                onValueChange={(val) => addBowelMovement(undefined, val as 'none'|'mild'|'moderate'|'severe')}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select discomfort level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="mild">Mild</SelectItem>
+                  <SelectItem value="moderate">Moderate</SelectItem>
+                  <SelectItem value="severe">Severe</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {dailyLog?.bowelMovements && dailyLog.bowelMovements.length > 0 && (
+              <div className="text-sm text-muted-foreground">
+                Recorded: {dailyLog.bowelMovements.length} time(s)
+              </div>
+            )}
           </CardContent>
         </Card>
 

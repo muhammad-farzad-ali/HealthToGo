@@ -70,6 +70,20 @@ export interface PhysiologicalMetrics {
   oxygenSaturation?: number;
 }
 
+export interface WellbeingMetrics {
+  mood?: number; // 1-10 scale
+  stress?: number; // 1-10 scale
+  energy?: number; // 1-10 scale
+  notes?: string;
+}
+
+export interface BowelMovement {
+  id: string;
+  time: string;
+  consistency?: 1 | 2 | 3 | 4 | 5 | 6 | 7; // Bristol Scale: 1=hard, 7=loose
+  discomfort?: 'none' | 'mild' | 'moderate' | 'severe';
+}
+
 export interface DailyLog {
   date: string;
   foodItems: LoggedFood[];
@@ -83,6 +97,8 @@ export interface DailyLog {
   meditationMins: number;
   customMetrics: Record<string, number | boolean>;
   physiological?: PhysiologicalMetrics;
+  wellbeing?: WellbeingMetrics;
+  bowelMovements?: BowelMovement[];
 }
 
 export interface DailyTargets {

@@ -102,6 +102,9 @@ export function Dashboard() {
     { id: 'sleep', name: 'Sleep Hours', color: '#a855f7' },
     { id: 'steps', name: 'Steps', color: '#3b82f6' },
     { id: 'water', name: 'Water (ml)', color: '#06b6d4' },
+    { id: 'mood', name: 'Mood', color: '#22c55e', wellbeing: true },
+    { id: 'stress', name: 'Stress', color: '#ef4444', wellbeing: true },
+    { id: 'energy', name: 'Energy', color: '#eab308', wellbeing: true },
     { id: 'heartRate', name: 'Heart Rate', color: '#ef4444', physiological: true },
     { id: 'weight', name: 'Weight', color: '#3b82f6', physiological: true },
     { id: 'waistCm', name: 'Waist (cm)', color: '#22c55e', physiological: true },
@@ -420,6 +423,44 @@ export function Dashboard() {
         </Card>
       )}
 
+      {(dailyLog?.wellbeing?.mood || dailyLog?.wellbeing?.stress || dailyLog?.wellbeing?.energy) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              Today's Wellbeing
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-4">
+              {dailyLog.wellbeing.mood && (
+                <div className="text-center p-3 bg-muted rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">{dailyLog.wellbeing.mood}</div>
+                  <div className="text-xs text-muted-foreground">Mood</div>
+                </div>
+              )}
+              {dailyLog.wellbeing.stress && (
+                <div className="text-center p-3 bg-muted rounded-lg">
+                  <div className="text-2xl font-bold text-red-500">{dailyLog.wellbeing.stress}</div>
+                  <div className="text-xs text-muted-foreground">Stress</div>
+                </div>
+              )}
+              {dailyLog.wellbeing.energy && (
+                <div className="text-center p-3 bg-muted rounded-lg">
+                  <div className="text-2xl font-bold text-yellow-500">{dailyLog.wellbeing.energy}</div>
+                  <div className="text-xs text-muted-foreground">Energy</div>
+                </div>
+              )}
+            </div>
+            {dailyLog.wellbeing.notes && (
+              <div className="mt-3 p-2 bg-muted rounded text-sm">
+                <div className="text-xs text-muted-foreground mb-1">Notes:</div>
+                <div className="text-sm">{dailyLog.wellbeing.notes}</div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {settings?.customMetrics && settings.customMetrics.length > 0 && (
         <Card>
           <CardHeader>
@@ -484,6 +525,10 @@ export function Dashboard() {
                   <SelectItem value="sleep">Sleep Hours</SelectItem>
                   <SelectItem value="steps">Steps</SelectItem>
                   <SelectItem value="water">Water</SelectItem>
+                  <SelectItem disabled value="wellbeing-header">— Wellbeing —</SelectItem>
+                  <SelectItem value="mood">Mood</SelectItem>
+                  <SelectItem value="stress">Stress</SelectItem>
+                  <SelectItem value="energy">Energy</SelectItem>
                   <SelectItem disabled value="physiological-header">— Physiological —</SelectItem>
                   <SelectItem value="heartRate">Heart Rate</SelectItem>
                   <SelectItem value="weight">Weight</SelectItem>
@@ -517,6 +562,9 @@ export function Dashboard() {
                 sleep: Math.round(sleep * 10) / 10,
                 steps: log?.steps || 0,
                 water: log?.waterMl || 0,
+                mood: log?.wellbeing?.mood,
+                stress: log?.wellbeing?.stress,
+                energy: log?.wellbeing?.energy,
                 heartRate: log?.physiological?.heartRate,
                 weight: log?.physiological?.weight,
                 waistCm: log?.physiological?.waistCm,
