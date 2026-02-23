@@ -6,7 +6,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Utensils, Dumbbell, Droplets, Activity, Scale, Ruler, Heart, Thermometer } from 'lucide-react';
+import { Utensils, Dumbbell, Droplets, Activity, Scale, Ruler, Heart, Thermometer, Moon } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -29,7 +29,7 @@ interface ProgressRingProps {
   color?: string;
 }
 
-function ProgressRing({ value, max, unit, color }: ProgressRingProps) {
+function ProgressRing({ value, max, label, unit, color }: ProgressRingProps) {
   const percentage = Math.min((value / max) * 100, 100);
   
   return (
@@ -60,6 +60,7 @@ function ProgressRing({ value, max, unit, color }: ProgressRingProps) {
           <span className="text-lg font-bold">{Math.round(percentage)}%</span>
         </div>
       </div>
+      <span className="text-sm font-medium mt-1">{label}</span>
       <span className="text-xs text-muted-foreground">{Math.round(value)}/{max}{unit}</span>
     </div>
   );
@@ -419,6 +420,68 @@ export function Dashboard() {
                   <div className="text-xs text-muted-foreground">O2 Saturation</div>
                 </div>
               )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {dailyLog?.sleepSessions && dailyLog.sleepSessions.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Moon className="h-4 w-4" />
+              Sleep Sessions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {dailyLog.sleepSessions.map((session, idx) => (
+                <div key={idx} className="flex justify-between items-center p-2 bg-muted rounded">
+                  <span className="text-sm">{session.startTime} - {session.endTime}</span>
+                  {session.quality && (
+                    <span className={`text-xs px-2 py-1 rounded ${
+                      session.quality === 'excellent' ? 'bg-green-100 text-green-700' :
+                      session.quality === 'good' ? 'bg-green-50 text-green-600' :
+                      session.quality === 'fair' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-red-100 text-red-700'
+                    }`}>
+                      {session.quality}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {dailyLog?.bowelMovements && dailyLog.bowelMovements.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Bowel Movements (Bristol Scale)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {dailyLog.bowelMovements.map((bm, idx) => (
+                <div key={idx} className="text-center p-2 bg-muted rounded">
+                  <div className="text-lg font-bold">{bm.consistency}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {new Date(bm.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                  {bm.discomfort && bm.discomfort !== 'none' && (
+                    <div className={`text-xs ${
+                      bm.discomfort === 'mild' ? 'text-yellow-600' :
+                      bm.discomfort === 'moderate' ? 'text-orange-600' :
+                      'text-red-600'
+                    }`}>
+                      {bm.discomfort}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
