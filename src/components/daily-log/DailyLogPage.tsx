@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { v4 as uuidv4 } from 'uuid';
 import { format, addDays, subDays } from 'date-fns';
@@ -59,12 +59,6 @@ export function DailyLogPage() {
   const settings = useLiveQuery(() => db.userSettings.get('default'));
   const targets = settings?.dailyTargets || DEFAULT_TARGETS;
 
-  useEffect(() => {
-    if (dailyLog && !dailyLog.date) {
-      db.dailyLogs.add(getEmptyDailyLog(dateKey));
-    }
-  }, [dailyLog, dateKey]);
-
   const calculateNutrition = () => {
     if (!dailyLog || !foodInventory) return { calories: 0, protein: 0, carbs: 0, fat: 0 };
     
@@ -98,20 +92,26 @@ export function DailyLogPage() {
   const nutrition = calculateNutrition();
   const caloriesBurned = calculateCaloriesBurned();
 
+  const ensureLogExists = async () => {
+    const existing = await db.dailyLogs.get(dateKey);
+    if (!existing) {
+      await db.dailyLogs.add(getEmptyDailyLog(dateKey));
+    }
+  };
+
   const addFood = async () => {
     if (!selectedFoodId) return;
-    const log = dailyLog || getEmptyDailyLog(dateKey);
+    await ensureLogExists();
+    
+    const log = await db.dailyLogs.get(dateKey);
+    if (!log) return;
     
     const newFoodItems = [
       ...log.foodItems,
       { id: uuidv4(), inventoryId: selectedFoodId, quantity: Number(foodQuantity) },
     ];
     
-    if (dailyLog) {
-      await db.dailyLogs.update(dateKey, { foodItems: newFoodItems });
-    } else {
-      await db.dailyLogs.add({ ...getEmptyDailyLog(dateKey), foodItems: newFoodItems });
-    }
+    await db.dailyLogs.update(dateKey, { foodItems: newFoodItems });
     
     setFoodDialogOpen(false);
     setSelectedFoodId('');
@@ -119,25 +119,25 @@ export function DailyLogPage() {
   };
 
   const removeFood = async (index: number) => {
-    if (!dailyLog) return;
-    const newFoodItems = dailyLog.foodItems.filter((_, i) => i !== index);
+    const log = await db.dailyLogs.get(dateKey);
+    if (!log) return;
+    const newFoodItems = log.foodItems.filter((_, i) => i !== index);
     await db.dailyLogs.update(dateKey, { foodItems: newFoodItems });
   };
 
   const addWorkout = async () => {
     if (!selectedWorkoutId) return;
-    const log = dailyLog || getEmptyDailyLog(dateKey);
+    await ensureLogExists();
+    
+    const log = await db.dailyLogs.get(dateKey);
+    if (!log) return;
     
     const newWorkoutItems = [
       ...log.workoutItems,
       { id: uuidv4(), inventoryId: selectedWorkoutId, quantity: Number(workoutQuantity) },
     ];
     
-    if (dailyLog) {
-      await db.dailyLogs.update(dateKey, { workoutItems: newWorkoutItems });
-    } else {
-      await db.dailyLogs.add({ ...getEmptyDailyLog(dateKey), workoutItems: newWorkoutItems });
-    }
+    await db.dailyLogs.update(dateKey, { workoutItems: newWorkoutItems });
     
     setWorkoutDialogOpen(false);
     setSelectedWorkoutId('');
@@ -145,23 +145,24 @@ export function DailyLogPage() {
   };
 
   const removeWorkout = async (index: number) => {
-    if (!dailyLog) return;
-    const newWorkoutItems = dailyLog.workoutItems.filter((_, i) => i !== index);
+    const log = await db.dailyLogs.get(dateKey);
+    if (!log) return;
+    const newWorkoutItems = log.workoutItems.filter((_, i) => i !== index);
     await db.dailyLogs.update(dateKey, { workoutItems: newWorkoutItems });
   };
 
   const addSleepSession = async () => {
-    const log = dailyLog || getEmptyDailyLog(dateKey);
+    await ensureLogExists();
+    
+    const log = await db.dailyLogs.get(dateKey);
+    if (!log) return;
+    
     const newSleepSessions = [
       ...log.sleepSessions,
       { id: uuidv4(), startTime: sleepStart, endTime: sleepEnd },
     ];
     
-    if (dailyLog) {
-      await db.dailyLogs.update(dateKey, { sleepSessions: newSleepSessions });
-    } else {
-      await db.dailyLogs.add({ ...getEmptyDailyLog(dateKey), sleepSessions: newSleepSessions });
-    }
+    await db.dailyLogs.update(dateKey, { sleepSessions: newSleepSessions });
     
     setSleepDialogOpen(false);
     setSleepStart('22:00');
@@ -169,18 +170,15 @@ export function DailyLogPage() {
   };
 
   const removeSleep = async (index: number) => {
-    if (!dailyLog) return;
-    const newSleepSessions = dailyLog.sleepSessions.filter((_, i) => i !== index);
+    const log = await db.dailyLogs.get(dateKey);
+    if (!log) return;
+    const newSleepSessions = log.sleepSessions.filter((_, i) => i !== index);
     await db.dailyLogs.update(dateKey, { sleepSessions: newSleepSessions });
   };
 
   const updateField = async (field: keyof DailyLog, value: number) => {
-    const currentLog = dailyLog || getEmptyDailyLog(dateKey);
-    if (dailyLog) {
-      await db.dailyLogs.update(dateKey, { [field]: value } as any);
-    } else {
-      await db.dailyLogs.add({ ...currentLog, [field]: value } as DailyLog);
-    }
+    await ensureLogExists();
+    await db.dailyLogs.update(dateKey, { [field]: value } as any);
   };
 
   const getFoodName = (id: string) => foodInventory?.find((f) => f.id === id)?.name || 'Unknown';
