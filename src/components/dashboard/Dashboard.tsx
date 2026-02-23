@@ -125,14 +125,18 @@ export function Dashboard() {
   };
 
   const calculateCaloriesBurned = (log: any) => {
-    if (!log || !workoutInventory) return 0;
-    return log.workoutItems.reduce((acc: number, item: any) => {
-      const workout = workoutInventory.find((w) => w.id === item.inventoryId);
-      if (workout) {
-        acc += workout.caloriesPerUnit * item.quantity;
-      }
-      return acc;
-    }, 0);
+    let burned = 0;
+    if (log?.workoutItems && workoutInventory) {
+      burned = log.workoutItems.reduce((acc: number, item: any) => {
+        const workout = workoutInventory.find((w) => w.id === item.inventoryId);
+        if (workout) {
+          acc += workout.caloriesPerUnit * item.quantity;
+        }
+        return acc;
+      }, 0);
+    }
+    const stepsCalories = Math.round((log?.steps || 0) * 0.05);
+    return burned + stepsCalories;
   };
 
   const getTotalSleep = (log: any) => {
@@ -299,12 +303,18 @@ export function Dashboard() {
           <CardContent>
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
-                <span>Calories Burned</span>
-                <span className="font-medium">{Math.round(caloriesBurned)}</span>
+                <span>Total Burned</span>
+                <span className="font-bold">{Math.round(caloriesBurned)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span>Steps</span>
-                <span className="font-medium">{dailyLog?.steps || 0} / {targets.steps}</span>
+              <div className="text-xs text-muted-foreground">
+                <div className="flex justify-between">
+                  <span>Workouts:</span>
+                  <span>{Math.round(caloriesBurned - Math.round((dailyLog?.steps || 0) * 0.05))}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Steps ({Math.round((dailyLog?.steps || 0) * 0.05)} cal):</span>
+                  <span>{dailyLog?.steps || 0}</span>
+                </div>
               </div>
               <Progress value={((dailyLog?.steps || 0) / targets.steps) * 100} />
               <div className="flex justify-between text-sm">

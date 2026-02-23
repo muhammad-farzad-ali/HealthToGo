@@ -88,15 +88,18 @@ export function DailyLogPage() {
   };
 
   const calculateCaloriesBurned = () => {
-    if (!dailyLog || !workoutInventory) return 0;
-    
-    return dailyLog.workoutItems.reduce((acc, logged) => {
-      const workout = workoutInventory.find((w) => w.id === logged.inventoryId);
-      if (workout) {
-        acc += workout.caloriesPerUnit * logged.quantity;
-      }
-      return acc;
-    }, 0);
+    let burned = 0;
+    if (dailyLog?.workoutItems && workoutInventory) {
+      burned = dailyLog.workoutItems.reduce((acc, logged) => {
+        const workout = workoutInventory.find((w) => w.id === logged.inventoryId);
+        if (workout) {
+          acc += workout.caloriesPerUnit * logged.quantity;
+        }
+        return acc;
+      }, 0);
+    }
+    const stepsCalories = Math.round((dailyLog?.steps || 0) * 0.05);
+    return burned + stepsCalories;
   };
 
   const nutrition = calculateNutrition();
@@ -392,8 +395,18 @@ export function DailyLogPage() {
               <div className="space-y-4">
               <div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span>Calories Burned</span>
-                  <span>{Math.round(caloriesBurned)}</span>
+                  <span>Total Burned</span>
+                  <span className="font-bold">{Math.round(caloriesBurned)}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  <div className="flex justify-between">
+                    <span>Workouts:</span>
+                    <span>{Math.round(caloriesBurned - Math.round((dailyLog?.steps || 0) * 0.05))}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Steps:</span>
+                    <span>{Math.round((dailyLog?.steps || 0) * 0.05)}</span>
+                  </div>
                 </div>
               </div>
               <div>
