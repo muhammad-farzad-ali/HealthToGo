@@ -2,10 +2,14 @@ import { useEffect, useState } from 'react';
 import { initializeSettings } from '@/lib/db';
 import { DailyLogPage } from '@/components/daily-log/DailyLogPage';
 import { InventoryPage } from '@/components/inventory/InventoryPage';
+import { Dashboard } from '@/components/dashboard/Dashboard';
+import { DataTools } from '@/components/settings/DataTools';
+
+type Tab = 'dashboard' | 'log' | 'inventory' | 'settings';
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'log' | 'inventory'>('log');
+  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
 
   useEffect(() => {
     initializeSettings().then(() => setIsLoading(false));
@@ -30,6 +34,16 @@ function App() {
       <main className="container mx-auto py-6 px-4">
         <div className="flex gap-4 mb-6">
           <button
+            onClick={() => setActiveTab('dashboard')}
+            className={`px-4 py-2 rounded-md transition-colors ${
+              activeTab === 'dashboard'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted hover:bg-muted/80'
+            }`}
+          >
+            Dashboard
+          </button>
+          <button
             onClick={() => setActiveTab('log')}
             className={`px-4 py-2 rounded-md transition-colors ${
               activeTab === 'log'
@@ -49,8 +63,21 @@ function App() {
           >
             Inventory
           </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`px-4 py-2 rounded-md transition-colors ${
+              activeTab === 'settings'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted hover:bg-muted/80'
+            }`}
+          >
+            Settings
+          </button>
         </div>
-        {activeTab === 'log' ? <DailyLogPage /> : <InventoryPage />}
+        {activeTab === 'dashboard' && <Dashboard />}
+        {activeTab === 'log' && <DailyLogPage />}
+        {activeTab === 'inventory' && <InventoryPage />}
+        {activeTab === 'settings' && <DataTools />}
       </main>
     </div>
   );
