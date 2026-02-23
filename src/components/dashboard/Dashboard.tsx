@@ -1,9 +1,10 @@
+import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { format, subDays } from 'date-fns';
 import { db, DEFAULT_TARGETS } from '@/lib/db';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Utensils, Dumbbell, Droplets, Activity, Scale, Ruler, Heart, Thermometer } from 'lucide-react';
 import {
   LineChart,
@@ -13,8 +14,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  AreaChart,
-  Area,
 } from 'recharts';
 
 function formatDate(date: Date): string {
@@ -80,25 +79,51 @@ export function Dashboard() {
   const foodInventory = useLiveQuery(() => db.foodInventory.toArray());
   const workoutInventory = useLiveQuery(() => db.workoutInventory.toArray());
 
-  const getLast7Days = () => {
-    const days = [];
-    for (let i = 6; i >= 0; i--) {
-      days.push(formatDate(subDays(new Date(), i)));
+  const [timePeriod, setTimePeriod] = useState<string>('7');
+  const [selectedMetric, setSelectedMetric] = useState<string>('calories');
+
+  const getDatesForPeriod = (days: number) => {
+    const dates = [];
+    for (let i = days - 1; i >= 0; i--) {
+      dates.push(formatDate(subDays(new Date(), i)));
     }
-    return days;
+    return dates;
   };
 
-  const weekLogs = useLiveQuery(async () => {
-    const dates = getLast7Days();
+  const metricOptions = [
+    { id: 'calories', name: 'Calories In', color: '#ef4444' },
+    { id: 'burned', name: 'Calories Burned', color: '#22c55e' },
+    { id: 'protein', name: 'Protein', color: '#22c55e' },
+    { id: 'carbs', name: 'Carbs', color: '#eab308' },
+    { id: 'fat', name: 'Fat', color: '#f97316' },
+    { id: 'fiber', name: 'Fiber', color: '#84cc16' },
+    { id: 'sugars', name: 'Sugars', color: '#8b5cf6' },
+    { id: 'saturatedFat', name: 'Sat Fat', color: '#ec4899' },
+    { id: 'sleep', name: 'Sleep Hours', color: '#a855f7' },
+    { id: 'steps', name: 'Steps', color: '#3b82f6' },
+    { id: 'water', name: 'Water (ml)', color: '#06b6d4' },
+    { id: 'heartRate', name: 'Heart Rate', color: '#ef4444', physiological: true },
+    { id: 'weight', name: 'Weight', color: '#3b82f6', physiological: true },
+    { id: 'waistCm', name: 'Waist (cm)', color: '#22c55e', physiological: true },
+    { id: 'bodyTemp', name: 'Body Temp', color: '#f97316', physiological: true },
+    { id: 'bloodSugar', name: 'Blood Sugar', color: '#8b5cf6', physiological: true },
+    { id: 'bloodPressure', name: 'Blood Pressure', color: '#ef4444', physiological: true },
+    { id: 'oxygenSaturation', name: 'O2 Saturation', color: '#06b6d4', physiological: true },
+  ];
+
+  const periodDays = parseInt(timePeriod);
+
+  const periodLogs = useLiveQuery(async () => {
+    const dates = getDatesForPeriod(periodDays);
     const logs = await Promise.all(
       dates.map(date => db.dailyLogs.get(date))
     );
     return logs.map((log, i) => ({
-      date: format(subDays(new Date(), 6 - i), 'EEE'),
+      date: format(subDays(new Date(), periodDays - 1 - i), 'MMM d'),
       fullDate: dates[i],
       log: log || null,
     }));
-  }, []);
+  }, [periodDays]);
 
   const calculateNutrition = (log: any) => {
     if (!log || !foodInventory) return { 
@@ -155,20 +180,6 @@ export function Dashboard() {
   const caloriesBurned = dailyLog ? calculateCaloriesBurned(dailyLog) : 0;
   const totalSleep = dailyLog ? getTotalSleep(dailyLog) : 0;
   const netCalories = nutrition.calories - caloriesBurned;
-
-  const chartData = weekLogs?.map(({ date, log }) => {
-    const weekNutrition = log ? calculateNutrition(log) : { calories: 0 };
-    const weekBurned = log ? calculateCaloriesBurned(log) : 0;
-    const weekSleep = log ? getTotalSleep(log) : 0;
-    return {
-      date,
-      calories: Math.round(weekNutrition.calories),
-      burned: Math.round(weekBurned),
-      sleep: Math.round(weekSleep * 10) / 10,
-      steps: log?.steps || 0,
-      water: log?.waterMl || 0,
-    };
-  }) || [];
 
   return (
     <div className="space-y-6">
@@ -439,102 +450,98 @@ export function Dashboard() {
         </Card>
       )}
 
-      <Tabs defaultValue="calories" className="w-full">
-        <TabsList>
-          <TabsTrigger value="calories">Calories</TabsTrigger>
-          <TabsTrigger value="sleep">Sleep</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="calories" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>7-Day Calorie Trend</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Area
-                    type="monotone"
-                    dataKey="calories"
-                    stroke="#ef4444"
-                    fill="#fecaca"
-                    name="Calories In"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="burned"
-                    stroke="#22c55e"
-                    strokeWidth={2}
-                    name="Calories Burned"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="sleep" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>7-Day Sleep Trend</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={[0, 12]} />
-                  <Tooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="sleep"
-                    stroke="#a855f7"
-                    strokeWidth={2}
-                    name="Hours"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="activity" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>7-Day Activity Trend</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Area
-                    type="monotone"
-                    dataKey="steps"
-                    stroke="#3b82f6"
-                    fill="#bfdbfe"
-                    name="Steps"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="water"
-                    stroke="#06b6d4"
-                    fill="#cffafe"
-                    name="Water (ml)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <CardTitle>Trend Analysis</CardTitle>
+            <div className="flex gap-2">
+              <Select value={timePeriod} onValueChange={setTimePeriod}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Select period" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">7 Days</SelectItem>
+                  <SelectItem value="14">14 Days</SelectItem>
+                  <SelectItem value="30">30 Days</SelectItem>
+                  <SelectItem value="90">90 Days</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={selectedMetric} onValueChange={setSelectedMetric}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Select metric" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem disabled value="nutrition-header">— Nutrition —</SelectItem>
+                  <SelectItem value="calories">Calories In</SelectItem>
+                  <SelectItem value="burned">Calories Burned</SelectItem>
+                  <SelectItem value="protein">Protein</SelectItem>
+                  <SelectItem value="carbs">Carbohydrates</SelectItem>
+                  <SelectItem value="fat">Fat</SelectItem>
+                  <SelectItem value="fiber">Fiber</SelectItem>
+                  <SelectItem value="sugars">Sugars</SelectItem>
+                  <SelectItem value="saturatedFat">Saturated Fat</SelectItem>
+                  <SelectItem disabled value="activity-header">— Activity —</SelectItem>
+                  <SelectItem value="sleep">Sleep Hours</SelectItem>
+                  <SelectItem value="steps">Steps</SelectItem>
+                  <SelectItem value="water">Water</SelectItem>
+                  <SelectItem disabled value="physiological-header">— Physiological —</SelectItem>
+                  <SelectItem value="heartRate">Heart Rate</SelectItem>
+                  <SelectItem value="weight">Weight</SelectItem>
+                  <SelectItem value="waistCm">Waist</SelectItem>
+                  <SelectItem value="bodyTemp">Body Temperature</SelectItem>
+                  <SelectItem value="bloodSugar">Blood Sugar</SelectItem>
+                  <SelectItem value="bloodPressure">Blood Pressure</SelectItem>
+                  <SelectItem value="oxygenSaturation">O2 Saturation</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={350}>
+            <LineChart data={periodLogs?.map(({ date, log }) => {
+              const nutrition = log ? calculateNutrition(log) : { calories: 0 };
+              const burned = log ? calculateCaloriesBurned(log) : 0;
+              const stepsBurned = Math.round((log?.steps || 0) * 0.05);
+              const sleep = getTotalSleep(log);
+              return {
+                date,
+                calories: Math.round(nutrition.calories),
+                burned: Math.round(burned + stepsBurned),
+                protein: Math.round(nutrition.protein),
+                carbs: Math.round(nutrition.carbs),
+                fat: Math.round(nutrition.fat),
+                fiber: Math.round(nutrition.fiber),
+                sugars: Math.round(nutrition.sugars),
+                saturatedFat: Math.round(nutrition.saturatedFat),
+                sleep: Math.round(sleep * 10) / 10,
+                steps: log?.steps || 0,
+                water: log?.waterMl || 0,
+                heartRate: log?.physiological?.heartRate,
+                weight: log?.physiological?.weight,
+                waistCm: log?.physiological?.waistCm,
+                bodyTemp: log?.physiological?.bodyTemp,
+                bloodSugar: log?.physiological?.bloodSugar,
+                bloodPressure: log?.physiological?.bloodPressureSystolic,
+                oxygenSaturation: log?.physiological?.oxygenSaturation,
+              };
+            })}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Line
+                type="monotone"
+                dataKey={selectedMetric}
+                stroke={metricOptions.find(m => m.id === selectedMetric)?.color || '#3b82f6'}
+                strokeWidth={2}
+                name={metricOptions.find(m => m.id === selectedMetric)?.name || selectedMetric}
+                connectNulls
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
     </div>
   );
 }
