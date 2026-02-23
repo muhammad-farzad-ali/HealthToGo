@@ -188,7 +188,7 @@ export function Dashboard() {
         />
         <ProgressRing
           value={totalSleep}
-          max={8}
+          max={targets.sleepHours || 8}
           label="Sleep"
           unit="h"
           color="#a855f7"
@@ -271,6 +271,36 @@ export function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {settings?.customMetrics && settings.customMetrics.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Custom Metrics</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-3">
+              {settings.customMetrics.map((metric) => (
+                <div key={metric.id} className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>{metric.name}</span>
+                    <span className="font-medium">
+                      {metric.type === 'boolean' 
+                        ? (dailyLog?.customMetrics?.[metric.id] ? 'Yes' : 'No')
+                        : `${dailyLog?.customMetrics?.[metric.id] || 0} ${metric.unit}`
+                      }
+                    </span>
+                  </div>
+                  {metric.type === 'number' && metric.target && (
+                    <Progress 
+                      value={((dailyLog?.customMetrics?.[metric.id] as number) || 0) / metric.target * 100} 
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs defaultValue="calories" className="w-full">
         <TabsList>

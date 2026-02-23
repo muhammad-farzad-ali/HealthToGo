@@ -30,7 +30,14 @@ export const DEFAULT_TARGETS = {
   fat: 65,
   waterMl: 2500,
   steps: 10000,
+  sleepHours: 8,
 };
+
+export const DEFAULT_CUSTOM_METRICS = [
+  { id: 'sugar', name: 'Sugar', unit: 'g', target: 25, type: 'number' as const },
+  { id: 'salt', name: 'Salt', unit: 'mg', target: 2300, type: 'number' as const },
+  { id: 'fiber', name: 'Fiber', unit: 'g', target: 25, type: 'number' as const },
+];
 
 export async function initializeSettings() {
   const existingSettings = await db.userSettings.get('default');
@@ -38,6 +45,7 @@ export async function initializeSettings() {
     await db.userSettings.add({
       id: 'default',
       dailyTargets: DEFAULT_TARGETS,
+      customMetrics: DEFAULT_CUSTOM_METRICS,
     });
   }
 }

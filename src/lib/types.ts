@@ -45,6 +45,14 @@ export interface SleepSession {
   quality?: 'poor' | 'fair' | 'good' | 'excellent';
 }
 
+export interface CustomMetric {
+  id: string;
+  name: string;
+  unit: string;
+  target?: number;
+  type: 'number' | 'boolean';
+}
+
 export interface DailyLog {
   date: string;
   foodItems: LoggedFood[];
@@ -56,6 +64,7 @@ export interface DailyLog {
   workMins: number;
   screenMins: number;
   meditationMins: number;
+  customMetrics: Record<string, number | boolean>;
 }
 
 export interface DailyTargets {
@@ -65,13 +74,16 @@ export interface DailyTargets {
   fat: number;
   waterMl: number;
   steps: number;
+  sleepHours: number;
 }
 
 export interface UserSettings {
   id: string;
   dailyTargets: DailyTargets;
+  customMetrics: CustomMetric[];
 }
 
 export type FoodItemInput = Omit<FoodItem, 'id' | 'createdAt' | 'updatedAt'>;
 export type WorkoutItemInput = Omit<WorkoutItem, 'id' | 'createdAt' | 'updatedAt'>;
 export type ActivityItemInput = Omit<ActivityItem, 'id' | 'createdAt' | 'updatedAt'>;
+export type CustomMetricInput = Omit<CustomMetric, 'id'>;

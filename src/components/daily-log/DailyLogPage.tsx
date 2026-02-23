@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronLeft, ChevronRight, Plus, Trash2, Utensils, Dumbbell, Footprints, Moon, Coffee, Timer, Monitor, Brain } from 'lucide-react';
@@ -32,6 +33,7 @@ function getEmptyDailyLog(date: string): DailyLog {
     workMins: 0,
     screenMins: 0,
     meditationMins: 0,
+    customMetrics: {},
   };
 }
 
@@ -179,6 +181,16 @@ export function DailyLogPage() {
   const updateField = async (field: keyof DailyLog, value: number) => {
     await ensureLogExists();
     await db.dailyLogs.update(dateKey, { [field]: value } as any);
+  };
+
+  const updateCustomMetric = async (metricId: string, value: number | boolean) => {
+    await ensureLogExists();
+    const log = await db.dailyLogs.get(dateKey);
+    if (!log) return;
+    const currentMetrics = log.customMetrics || {};
+    await db.dailyLogs.update(dateKey, {
+      customMetrics: { ...currentMetrics, [metricId]: value },
+    });
   };
 
   const getFoodName = (id: string) => foodInventory?.find((f) => f.id === id)?.name || 'Unknown';
@@ -541,10 +553,51 @@ export function DailyLogPage() {
                   onChange={(e) => updateField('meditationMins', Number(e.target.value))}
                 />
               </div>
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            </CardContent>
+          </Card>
+
+          {settings?.customMetrics && settings.customMetrics.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Timer className="h-4 w-4" />
+                  Custom Metrics
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {settings.customMetrics.map((metric) => (
+                    <div key={metric.id} className="space-y-2">
+                      <Label className="text-sm">
+                        {metric.name} {metric.target && `(${metric.target} ${metric.unit} target)`}
+                      </Label>
+                      {metric.type === 'boolean' ? (
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={!!dailyLog?.customMetrics?.[metric.id]}
+                            onCheckedChange={(checked) => updateCustomMetric(metric.id, checked)}
+                          />
+                          <span className="text-sm text-muted-foreground">
+                            {dailyLog?.customMetrics?.[metric.id] ? 'Yes' : 'No'}
+                          </span>
+                        </div>
+                      ) : (
+                        <Input
+                          type="number"
+                          min="0"
+                          value={(dailyLog?.customMetrics?.[metric.id] as number) || 0}
+                          onChange={(e) => updateCustomMetric(metric.id, Number(e.target.value))}
+                          placeholder={`Enter ${metric.name.toLowerCase()}`}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }

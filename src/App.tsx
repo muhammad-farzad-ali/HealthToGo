@@ -3,7 +3,7 @@ import { initializeSettings } from '@/lib/db';
 import { DailyLogPage } from '@/components/daily-log/DailyLogPage';
 import { InventoryPage } from '@/components/inventory/InventoryPage';
 import { Dashboard } from '@/components/dashboard/Dashboard';
-import { DataTools } from '@/components/settings/DataTools';
+import { SettingsPage } from '@/components/settings/SettingsPage';
 
 type Tab = 'dashboard' | 'log' | 'inventory' | 'settings';
 
@@ -77,7 +77,7 @@ function App() {
         {activeTab === 'dashboard' && <Dashboard />}
         {activeTab === 'log' && <DailyLogPage />}
         {activeTab === 'inventory' && <InventoryPage />}
-        {activeTab === 'settings' && <DataTools />}
+        {activeTab === 'settings' && <SettingsPage />}
       </main>
     </div>
   );
