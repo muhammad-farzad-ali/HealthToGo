@@ -15,7 +15,7 @@ import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, Plus, Trash2, Utensils, Dumbbell, Footprints, Moon, Coffee, Timer, Monitor, Brain } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, Utensils, Dumbbell, Moon, Coffee, Timer, Monitor, Brain } from 'lucide-react';
 
 function formatDate(date: Date): string {
   return format(date, 'yyyy-MM-dd');
@@ -389,12 +389,27 @@ export function DailyLogPage() {
             </Dialog>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+              <div className="space-y-4">
               <div>
                 <div className="flex justify-between text-sm mb-1">
                   <span>Calories Burned</span>
                   <span>{Math.round(caloriesBurned)}</span>
                 </div>
+              </div>
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span>Steps</span>
+                  <span>{dailyLog?.steps || 0} / {targets.steps}</span>
+                </div>
+                <Progress value={((dailyLog?.steps || 0) / targets.steps) * 100} />
+                <Input
+                  type="number"
+                  min="0"
+                  value={dailyLog?.steps || 0}
+                  onChange={(e) => updateField('steps', Number(e.target.value))}
+                  placeholder="Enter steps"
+                  className="mt-2"
+                />
               </div>
               {dailyLog?.workoutItems.length ? (
                 <ScrollArea className="h-[180px]">
@@ -424,35 +439,8 @@ export function DailyLogPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Footprints className="h-4 w-4" />
-              Steps
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Steps</span>
-                  <span>{dailyLog?.steps || 0} / {targets.steps}</span>
-                </div>
-                <Progress value={((dailyLog?.steps || 0) / targets.steps) * 100} />
-              </div>
-              <Input
-                type="number"
-                min="0"
-                value={dailyLog?.steps || 0}
-                onChange={(e) => updateField('steps', Number(e.target.value))}
-                placeholder="Enter steps"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Coffee className="h-4 w-4" />
-              Hydration & Caffeine
+              Hydration
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -467,15 +455,6 @@ export function DailyLogPage() {
                   <Button variant="outline" size="sm" onClick={() => updateField('waterMl', (dailyLog?.waterMl || 0) + 250)}>+250ml</Button>
                   <Button variant="outline" size="sm" onClick={() => updateField('waterMl', (dailyLog?.waterMl || 0) + 500)}>+500ml</Button>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm">Caffeine (mg)</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={dailyLog?.caffeineMg || 0}
-                  onChange={(e) => updateField('caffeineMg', Number(e.target.value))}
-                />
               </div>
             </div>
           </CardContent>

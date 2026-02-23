@@ -211,7 +211,7 @@ export function Dashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <ProgressRing
           value={nutrition.saturatedFat}
           max={targets.saturatedFat}
@@ -225,13 +225,6 @@ export function Dashboard() {
           label="Sugars"
           unit="g"
           color="#8b5cf6"
-        />
-        <ProgressRing
-          value={dailyLog?.steps || 0}
-          max={targets.steps}
-          label="Steps"
-          unit=""
-          color="#3b82f6"
         />
         <ProgressRing
           value={totalSleep}
@@ -300,15 +293,20 @@ export function Dashboard() {
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Dumbbell className="h-4 w-4" />
-              Exercise
+              Exercise & Steps
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="flex justify-between text-sm">
                 <span>Calories Burned</span>
                 <span className="font-medium">{Math.round(caloriesBurned)}</span>
               </div>
+              <div className="flex justify-between text-sm">
+                <span>Steps</span>
+                <span className="font-medium">{dailyLog?.steps || 0} / {targets.steps}</span>
+              </div>
+              <Progress value={((dailyLog?.steps || 0) / targets.steps) * 100} />
               <div className="flex justify-between text-sm">
                 <span>Net Calories</span>
                 <span className={`font-medium ${netCalories > 0 ? 'text-red-500' : 'text-green-500'}`}>

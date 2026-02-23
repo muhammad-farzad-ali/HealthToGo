@@ -38,6 +38,7 @@ export const DEFAULT_TARGETS = {
 };
 
 export const DEFAULT_CUSTOM_METRICS = [
+  { id: 'caffeine', name: 'Caffeine', unit: 'mg', target: 400, type: 'number' as const },
   { id: 'salt', name: 'Salt', unit: 'mg', target: 2300, type: 'number' as const },
   { id: 'cholesterol', name: 'Cholesterol', unit: 'mg', target: 300, type: 'number' as const },
   { id: 'sodium', name: 'Sodium', unit: 'mg', target: 2300, type: 'number' as const },
