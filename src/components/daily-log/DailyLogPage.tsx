@@ -1,0 +1,552 @@
+import { useState, useEffect } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { v4 as uuidv4 } from 'uuid';
+import { format, addDays, subDays } from 'date-fns';
+import { db, DEFAULT_TARGETS } from '@/lib/db';
+import type { DailyLog } from '@/lib/types';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ChevronLeft, ChevronRight, Plus, Trash2, Utensils, Dumbbell, Footprints, Moon, Coffee, Timer, Monitor, Brain } from 'lucide-react';
+
+function formatDate(date: Date): string {
+  return format(date, 'yyyy-MM-dd');
+}
+
+function getEmptyDailyLog(date: string): DailyLog {
+  return {
+    date,
+    foodItems: [],
+    workoutItems: [],
+    steps: 0,
+    sleepSessions: [],
+    waterMl: 0,
+    caffeineMg: 0,
+    workMins: 0,
+    screenMins: 0,
+    meditationMins: 0,
+  };
+}
+
+export function DailyLogPage() {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const dateKey = formatDate(currentDate);
+  
+  const [foodDialogOpen, setFoodDialogOpen] = useState(false);
+  const [workoutDialogOpen, setWorkoutDialogOpen] = useState(false);
+  const [sleepDialogOpen, setSleepDialogOpen] = useState(false);
+  const [selectedFoodId, setSelectedFoodId] = useState('');
+  const [foodQuantity, setFoodQuantity] = useState('1');
+  const [selectedWorkoutId, setSelectedWorkoutId] = useState('');
+  const [workoutQuantity, setWorkoutQuantity] = useState('1');
+  const [sleepStart, setSleepStart] = useState('22:00');
+  const [sleepEnd, setSleepEnd] = useState('07:00');
+
+  const dailyLog = useLiveQuery(async () => {
+    const log = await db.dailyLogs.get(dateKey);
+    return log || getEmptyDailyLog(dateKey);
+  }, [dateKey]);
+
+  const foodInventory = useLiveQuery(() => db.foodInventory.toArray());
+  const workoutInventory = useLiveQuery(() => db.workoutInventory.toArray());
+  const settings = useLiveQuery(() => db.userSettings.get('default'));
+  const targets = settings?.dailyTargets || DEFAULT_TARGETS;
+
+  useEffect(() => {
+    if (dailyLog && !dailyLog.date) {
+      db.dailyLogs.add(getEmptyDailyLog(dateKey));
+    }
+  }, [dailyLog, dateKey]);
+
+  const calculateNutrition = () => {
+    if (!dailyLog || !foodInventory) return { calories: 0, protein: 0, carbs: 0, fat: 0 };
+    
+    return dailyLog.foodItems.reduce(
+      (acc, logged) => {
+        const food = foodInventory.find((f) => f.id === logged.inventoryId);
+        if (food) {
+          acc.calories += food.calories * logged.quantity;
+          acc.protein += food.protein * logged.quantity;
+          acc.carbs += food.carbs * logged.quantity;
+          acc.fat += food.fat * logged.quantity;
+        }
+        return acc;
+      },
+      { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    );
+  };
+
+  const calculateCaloriesBurned = () => {
+    if (!dailyLog || !workoutInventory) return 0;
+    
+    return dailyLog.workoutItems.reduce((acc, logged) => {
+      const workout = workoutInventory.find((w) => w.id === logged.inventoryId);
+      if (workout) {
+        acc += workout.caloriesPerUnit * logged.quantity;
+      }
+      return acc;
+    }, 0);
+  };
+
+  const nutrition = calculateNutrition();
+  const caloriesBurned = calculateCaloriesBurned();
+
+  const addFood = async () => {
+    if (!selectedFoodId) return;
+    const log = dailyLog || getEmptyDailyLog(dateKey);
+    
+    const newFoodItems = [
+      ...log.foodItems,
+      { id: uuidv4(), inventoryId: selectedFoodId, quantity: Number(foodQuantity) },
+    ];
+    
+    if (dailyLog) {
+      await db.dailyLogs.update(dateKey, { foodItems: newFoodItems });
+    } else {
+      await db.dailyLogs.add({ ...getEmptyDailyLog(dateKey), foodItems: newFoodItems });
+    }
+    
+    setFoodDialogOpen(false);
+    setSelectedFoodId('');
+    setFoodQuantity('1');
+  };
+
+  const removeFood = async (index: number) => {
+    if (!dailyLog) return;
+    const newFoodItems = dailyLog.foodItems.filter((_, i) => i !== index);
+    await db.dailyLogs.update(dateKey, { foodItems: newFoodItems });
+  };
+
+  const addWorkout = async () => {
+    if (!selectedWorkoutId) return;
+    const log = dailyLog || getEmptyDailyLog(dateKey);
+    
+    const newWorkoutItems = [
+      ...log.workoutItems,
+      { id: uuidv4(), inventoryId: selectedWorkoutId, quantity: Number(workoutQuantity) },
+    ];
+    
+    if (dailyLog) {
+      await db.dailyLogs.update(dateKey, { workoutItems: newWorkoutItems });
+    } else {
+      await db.dailyLogs.add({ ...getEmptyDailyLog(dateKey), workoutItems: newWorkoutItems });
+    }
+    
+    setWorkoutDialogOpen(false);
+    setSelectedWorkoutId('');
+    setWorkoutQuantity('1');
+  };
+
+  const removeWorkout = async (index: number) => {
+    if (!dailyLog) return;
+    const newWorkoutItems = dailyLog.workoutItems.filter((_, i) => i !== index);
+    await db.dailyLogs.update(dateKey, { workoutItems: newWorkoutItems });
+  };
+
+  const addSleepSession = async () => {
+    const log = dailyLog || getEmptyDailyLog(dateKey);
+    const newSleepSessions = [
+      ...log.sleepSessions,
+      { id: uuidv4(), startTime: sleepStart, endTime: sleepEnd },
+    ];
+    
+    if (dailyLog) {
+      await db.dailyLogs.update(dateKey, { sleepSessions: newSleepSessions });
+    } else {
+      await db.dailyLogs.add({ ...getEmptyDailyLog(dateKey), sleepSessions: newSleepSessions });
+    }
+    
+    setSleepDialogOpen(false);
+    setSleepStart('22:00');
+    setSleepEnd('07:00');
+  };
+
+  const removeSleep = async (index: number) => {
+    if (!dailyLog) return;
+    const newSleepSessions = dailyLog.sleepSessions.filter((_, i) => i !== index);
+    await db.dailyLogs.update(dateKey, { sleepSessions: newSleepSessions });
+  };
+
+  const updateField = async (field: keyof DailyLog, value: number) => {
+    const currentLog = dailyLog || getEmptyDailyLog(dateKey);
+    if (dailyLog) {
+      await db.dailyLogs.update(dateKey, { [field]: value } as any);
+    } else {
+      await db.dailyLogs.add({ ...currentLog, [field]: value } as DailyLog);
+    }
+  };
+
+  const getFoodName = (id: string) => foodInventory?.find((f) => f.id === id)?.name || 'Unknown';
+  const getWorkoutName = (id: string) => workoutInventory?.find((w) => w.id === id)?.name || 'Unknown';
+
+  const getSleepDuration = (start: string, end: string) => {
+    const [startH, startM] = start.split(':').map(Number);
+    const [endH, endM] = end.split(':').map(Number);
+    let duration = (endH + 24 - startH) % 24 + (endM - startM) / 60;
+    return Math.round(duration * 10) / 10;
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="icon" onClick={() => setCurrentDate(subDays(currentDate, 1))}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <div className="text-lg font-medium">
+            {format(currentDate, 'EEEE, MMMM d, yyyy')}
+          </div>
+          <Button variant="outline" size="icon" onClick={() => setCurrentDate(addDays(currentDate, 1))}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+        <Button variant="ghost" onClick={() => setCurrentDate(new Date())}>Today</Button>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Utensils className="h-4 w-4" />
+              Nutrition
+            </CardTitle>
+            <Dialog open={foodDialogOpen} onOpenChange={setFoodDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Food</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Food Item</Label>
+                    <Select value={selectedFoodId} onValueChange={setSelectedFoodId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select food" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {foodInventory?.map((food) => (
+                          <SelectItem key={food.id} value={food.id}>{food.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Quantity</Label>
+                    <Input
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      value={foodQuantity}
+                      onChange={(e) => setFoodQuantity(e.target.value)}
+                    />
+                  </div>
+                  <Button onClick={addFood} className="w-full">Add Food</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span>Calories</span>
+                  <span>{Math.round(nutrition.calories)} / {targets.calories}</span>
+                </div>
+                <Progress value={(nutrition.calories / targets.calories) * 100} />
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center text-sm">
+                <div>
+                  <div className="text-muted-foreground">Protein</div>
+                  <div className="font-medium">{Math.round(nutrition.protein)}g</div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Carbs</div>
+                  <div className="font-medium">{Math.round(nutrition.carbs)}g</div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Fat</div>
+                  <div className="font-medium">{Math.round(nutrition.fat)}g</div>
+                </div>
+              </div>
+              {dailyLog?.foodItems.length ? (
+                <ScrollArea className="h-[150px]">
+                  <Table>
+                    <TableBody>
+                      {dailyLog.foodItems.map((item, index) => (
+                        <TableRow key={item.id} className="h-8">
+                          <TableCell className="py-1">{getFoodName(item.inventoryId)}</TableCell>
+                          <TableCell className="py-1 text-right">x{item.quantity}</TableCell>
+                          <TableCell className="py-1 w-[40px]">
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeFood(index)}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              ) : (
+                <p className="text-muted-foreground text-sm text-center py-2">No food logged</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Dumbbell className="h-4 w-4" />
+              Exercise
+            </CardTitle>
+            <Dialog open={workoutDialogOpen} onOpenChange={setWorkoutDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Workout</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Workout</Label>
+                    <Select value={selectedWorkoutId} onValueChange={setSelectedWorkoutId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select workout" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {workoutInventory?.map((workout) => (
+                          <SelectItem key={workout.id} value={workout.id}>{workout.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Quantity</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={workoutQuantity}
+                      onChange={(e) => setWorkoutQuantity(e.target.value)}
+                    />
+                  </div>
+                  <Button onClick={addWorkout} className="w-full">Add Workout</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span>Calories Burned</span>
+                  <span>{Math.round(caloriesBurned)}</span>
+                </div>
+              </div>
+              {dailyLog?.workoutItems.length ? (
+                <ScrollArea className="h-[180px]">
+                  <Table>
+                    <TableBody>
+                      {dailyLog.workoutItems.map((item, index) => (
+                        <TableRow key={item.id} className="h-8">
+                          <TableCell className="py-1">{getWorkoutName(item.inventoryId)}</TableCell>
+                          <TableCell className="py-1 text-right">x{item.quantity}</TableCell>
+                          <TableCell className="py-1 w-[40px]">
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeWorkout(index)}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              ) : (
+                <p className="text-muted-foreground text-sm text-center py-2">No workouts logged</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Footprints className="h-4 w-4" />
+              Steps
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span>Steps</span>
+                  <span>{dailyLog?.steps || 0} / {targets.steps}</span>
+                </div>
+                <Progress value={((dailyLog?.steps || 0) / targets.steps) * 100} />
+              </div>
+              <Input
+                type="number"
+                min="0"
+                value={dailyLog?.steps || 0}
+                onChange={(e) => updateField('steps', Number(e.target.value))}
+                placeholder="Enter steps"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Coffee className="h-4 w-4" />
+              Hydration & Caffeine
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span>Water</span>
+                  <span>{(dailyLog?.waterMl || 0)} / {targets.waterMl} ml</span>
+                </div>
+                <Progress value={((dailyLog?.waterMl || 0) / targets.waterMl) * 100} />
+                <div className="flex gap-2 mt-2">
+                  <Button variant="outline" size="sm" onClick={() => updateField('waterMl', (dailyLog?.waterMl || 0) + 250)}>+250ml</Button>
+                  <Button variant="outline" size="sm" onClick={() => updateField('waterMl', (dailyLog?.waterMl || 0) + 500)}>+500ml</Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm">Caffeine (mg)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={dailyLog?.caffeineMg || 0}
+                  onChange={(e) => updateField('caffeineMg', Number(e.target.value))}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Moon className="h-4 w-4" />
+              Sleep
+            </CardTitle>
+            <Dialog open={sleepDialogOpen} onOpenChange={setSleepDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Sleep Session</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Bedtime</Label>
+                    <Input type="time" value={sleepStart} onChange={(e) => setSleepStart(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Wake up</Label>
+                    <Input type="time" value={sleepEnd} onChange={(e) => setSleepEnd(e.target.value)} />
+                  </div>
+                  <Button onClick={addSleepSession} className="w-full">Add Sleep</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </CardHeader>
+          <CardContent>
+            {dailyLog?.sleepSessions.length ? (
+              <ScrollArea className="h-[180px]">
+                <Table>
+                  <TableBody>
+                    {dailyLog.sleepSessions.map((session, index) => (
+                      <TableRow key={session.id} className="h-8">
+                        <TableCell className="py-1">{session.startTime} - {session.endTime}</TableCell>
+                        <TableCell className="py-1 text-right">
+                          <Badge variant="secondary">{getSleepDuration(session.startTime, session.endTime)}h</Badge>
+                        </TableCell>
+                        <TableCell className="py-1 w-[40px]">
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeSleep(index)}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            ) : (
+              <p className="text-muted-foreground text-sm text-center py-2">No sleep logged</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Timer className="h-4 w-4" />
+              Work & Screen Time
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-sm">Work (minutes)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={dailyLog?.workMins || 0}
+                  onChange={(e) => updateField('workMins', Number(e.target.value))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm flex items-center gap-2">
+                  <Monitor className="h-3 w-3" />
+                  Screen Time (minutes)
+                </Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={dailyLog?.screenMins || 0}
+                  onChange={(e) => updateField('screenMins', Number(e.target.value))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm flex items-center gap-2">
+                  <Brain className="h-3 w-3" />
+                  Meditation (minutes)
+                </Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={dailyLog?.meditationMins || 0}
+                  onChange={(e) => updateField('meditationMins', Number(e.target.value))}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
