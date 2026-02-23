@@ -15,7 +15,7 @@ import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, Plus, Trash2, Utensils, Dumbbell, Moon, Coffee, Timer, Monitor, Brain, Activity, Scale, Ruler, Heart, Thermometer } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, Utensils, Dumbbell, Moon, Coffee, Timer, Monitor, Brain, Activity, Scale, Ruler, Heart, Thermometer, Save } from 'lucide-react';
 
 function formatDate(date: Date): string {
   return format(date, 'yyyy-MM-dd');
@@ -262,6 +262,12 @@ export function DailyLogPage() {
           </Button>
         </div>
         <Button variant="ghost" onClick={() => setCurrentDate(new Date())}>Today</Button>
+        <Button variant="default" onClick={async () => {
+          await ensureLogExists();
+        }} className="gap-1">
+          <Save className="h-4 w-4" />
+          Save
+        </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -814,27 +820,34 @@ export function DailyLogPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              Bowel Movements
+              <Activity className="h-4 w-4" />
+              Bowel Movements (Bristol Scale)
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-2 flex-wrap">
-              {[1,2,3,4,5,6,7].map(consistency => (
-                  <Button
+            <div className="space-y-2">
+              <Label className="text-sm">Consistency (1-7)</Label>
+              <div className="flex gap-1">
+                {[1,2,3,4,5,6,7].map(consistency => (
+                  <button
                     key={consistency}
-                    variant={dailyLog?.bowelMovements?.some(b => b.consistency === consistency) ? 'default' : 'outline'}
-                    size="sm"
+                    type="button"
                     onClick={() => addBowelMovement(consistency as 1|2|3|4|5|6|7)}
-                    className="text-xs"
+                    className={`flex-1 py-2 text-xs rounded transition-colors ${
+                      dailyLog?.bowelMovements?.some(b => b.consistency === consistency) 
+                        ? 'bg-amber-600 text-white' 
+                        : 'bg-muted hover:bg-muted/80'
+                    }`}
                   >
                     {consistency}
-                  </Button>
+                  </button>
                 ))}
-            </div>
-            <div className="flex justify-between text-xs text-muted-foreground mb-2">
-              <span>Hard</span>
-              <span>Normal</span>
-              <span>Loose</span>
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Hard</span>
+                <span>Normal</span>
+                <span>Loose</span>
+              </div>
             </div>
             
             <div className="space-y-2">
